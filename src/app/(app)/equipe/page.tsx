@@ -1,13 +1,24 @@
 import { db } from "@/lib/db";
+import { MARCA_EXEMPLO } from "@/lib/dados-exemplo";
 import { requireMember } from "@/lib/session";
 import { PageHeader, Chip } from "@/components/ui";
 import { INSTRUMENTS } from "@/lib/constants";
-import { changePin, createMember, updateMember, updateTreasurer } from "./actions";
+import {
+  changePin,
+  createMember,
+  limparExemplos,
+  mudarTema,
+  updateMember,
+  updateTreasurer,
+} from "./actions";
+import { temaAtual } from "@/lib/tema";
 
 export const dynamic = "force-dynamic";
 
 export default async function EquipePage() {
   const me = await requireMember();
+  const tema = await temaAtual();
+  const temExemplos = (await db.event.count({ where: { notes: { contains: MARCA_EXEMPLO } } })) > 0;
 
   const members = await db.member.findMany({
     orderBy: [{ active: "desc" }, { name: "asc" }],
@@ -175,6 +186,49 @@ export default async function EquipePage() {
             Administrador (pode excluir eventos e gerenciar a equipe)
           </label>
           <button type="submit" className="btn-primary w-full">Adicionar</button>
+        </form>
+      )}
+
+      <section className="card mt-5">
+        <h3 className="section-title mb-3">Aparência</h3>
+        <form action={mudarTema} className="grid grid-cols-3 gap-2">
+          {[
+            { valor: "claro", rotulo: "Claro" },
+            { valor: "escuro", rotulo: "Escuro" },
+            { valor: "sistema", rotulo: "Automático" },
+          ].map((opcao) => (
+            <button
+              key={opcao.valor}
+              type="submit"
+              name="tema"
+              value={opcao.valor}
+              className={`btn btn-sm border ${
+                tema === opcao.valor
+                  ? "border-brand-500 bg-brand-600/15 text-brand-500"
+                  : "border-ink-600 bg-ink-800 text-slate-300"
+              }`}
+            >
+              {opcao.rotulo}
+            </button>
+          ))}
+        </form>
+        <p className="mt-2 text-xs text-slate-500">
+          Automático segue o modo claro ou escuro do seu celular. A escolha vale só
+          neste aparelho.
+        </p>
+      </section>
+
+      {me.isAdmin && temExemplos && (
+        <form action={limparExemplos} className="card mt-5">
+          <h3 className="section-title mb-2">Dados de exemplo</h3>
+          <p className="mb-3 text-xs text-slate-500">
+            O sistema veio com uma agenda, um repertório e algumas movimentações de
+            exemplo, só para vocês verem tudo funcionando. Ao apagar, some apenas o
+            que veio pronto — o que a equipe já cadastrou fica.
+          </p>
+          <button type="submit" className="btn-danger btn-sm w-full">
+            Apagar dados de exemplo
+          </button>
         </form>
       )}
 

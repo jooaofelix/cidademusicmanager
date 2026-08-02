@@ -63,7 +63,7 @@ export default async function HomePage() {
           <h2 className="section-title mb-2">Aguardando seu OK</h2>
           <ul className="space-y-2">
             {myPending.map((l) => (
-              <li key={l.id} className="card border-amber-900/60 bg-amber-950/20">
+              <li key={l.id} className="card tint-amber">
                 <Link href={`/agenda/${l.event.id}`} className="block">
                   <p className="text-sm font-semibold">{l.event.title}</p>
                   <p className="mt-0.5 text-xs text-slate-400">
@@ -78,7 +78,7 @@ export default async function HomePage() {
                     <input type="hidden" name="status" value="CONFIRMADO" />
                     <button
                       type="submit"
-                      className="btn btn-sm w-full border border-emerald-800/70 bg-emerald-950/50 text-emerald-300"
+                      className="btn btn-sm w-full border tint-green"
                     >
                       ✓ Confirmo presença
                     </button>

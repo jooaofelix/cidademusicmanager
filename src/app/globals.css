@@ -2,9 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   Aparência
+   ---------------------------------------------------------------------------
+   Claro é o padrão. O escuro entra de duas formas: quando a pessoa escolhe
+   "escuro", ou quando ela deixou no automático e o próprio celular está no
+   modo escuro. Quem escolheu "claro" continua no claro mesmo com o celular
+   no escuro — por isso o :not() na regra do media query.
+
+   As telas nunca citam cor diretamente: usam ink-* para superfícies e slate-*
+   para texto, e os dois saem daqui.
+--------------------------------------------------------------------------- */
+
 @layer base {
   :root {
+    color-scheme: light;
+
+    --ink-950: 244 246 249; /* fundo da página */
+    --ink-900: 255 255 255; /* fundo de campos */
+    --ink-850: 255 255 255; /* cartões */
+    --ink-800: 241 244 247;
+    --ink-700: 225 230 236; /* bordas */
+    --ink-600: 205 212 221; /* bordas de destaque */
+
+    --txt-100: 15 23 42; /* maior contraste, títulos */
+    --txt-200: 30 41 59;
+    --txt-300: 51 65 85; /* texto corrido */
+    --txt-400: 87 101 122;
+    --txt-500: 108 122 143; /* apoio, legendas */
+    --txt-600: 140 154 173; /* menor contraste */
+
+    --sombra-cartao: 0 1px 2px rgb(15 23 42 / 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-tema="claro"]) {
+      color-scheme: dark;
+
+      --ink-950: 10 10 15;
+      --ink-900: 16 16 24;
+      --ink-850: 22 22 31;
+      --ink-800: 28 28 39;
+      --ink-700: 39 39 51;
+      --ink-600: 58 58 72;
+
+      --txt-100: 241 245 249;
+      --txt-200: 226 232 240;
+      --txt-300: 203 213 225;
+      --txt-400: 148 163 184;
+      --txt-500: 122 137 158;
+      --txt-600: 90 104 124;
+
+      --sombra-cartao: none;
+    }
+  }
+
+  :root[data-tema="escuro"] {
     color-scheme: dark;
+
+    --ink-950: 10 10 15;
+    --ink-900: 16 16 24;
+    --ink-850: 22 22 31;
+    --ink-800: 28 28 39;
+    --ink-700: 39 39 51;
+    --ink-600: 58 58 72;
+
+    --txt-100: 241 245 249;
+    --txt-200: 226 232 240;
+    --txt-300: 203 213 225;
+    --txt-400: 148 163 184;
+    --txt-500: 122 137 158;
+    --txt-600: 90 104 124;
+
+    --sombra-cartao: none;
   }
 
   html,
@@ -28,10 +98,12 @@
 @layer components {
   .card {
     @apply rounded-2xl border border-ink-700 bg-ink-850 p-4;
+    box-shadow: var(--sombra-cartao);
   }
 
   .card-tight {
     @apply rounded-xl border border-ink-700 bg-ink-850 p-3;
+    box-shadow: var(--sombra-cartao);
   }
 
   .label {
@@ -58,7 +130,7 @@
   }
 
   .btn-danger {
-    @apply btn border border-red-900/60 bg-red-950/40 text-red-300 hover:bg-red-950/70;
+    @apply btn border;
   }
 
   .btn-sm {
@@ -72,6 +144,66 @@
   .section-title {
     @apply text-xs font-semibold uppercase tracking-wider text-slate-400;
   }
+
+  /* -------------------------------------------------------------------------
+     Realces coloridos — selos, avisos e caixas de destaque.
+
+     Cada um define fundo, borda e texto de uma vez: no claro e no escuro os
+     três precisam mudar juntos, senão o contraste se perde. Usar estas classes
+     no lugar de cores soltas é o que mantém as duas aparências legíveis.
+  ------------------------------------------------------------------------- */
+  .tint-slate {
+    @apply border-ink-600 bg-ink-800 text-slate-300;
+  }
+  .tint-green {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+  .tint-red {
+    @apply border-red-200 bg-red-50 text-red-700;
+  }
+  .tint-amber {
+    @apply border-amber-200 bg-amber-50 text-amber-700;
+  }
+  .tint-blue {
+    @apply border-brand-200 bg-brand-50 text-brand-700;
+  }
+  .tint-purple {
+    @apply border-purple-200 bg-purple-50 text-purple-700;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) .tint-green {
+    @apply border-emerald-800/70 bg-emerald-950/50 text-emerald-300;
+  }
+  :root:not([data-tema="claro"]) .tint-red {
+    @apply border-red-900/70 bg-red-950/50 text-red-300;
+  }
+  :root:not([data-tema="claro"]) .tint-amber {
+    @apply border-amber-800/70 bg-amber-950/50 text-amber-300;
+  }
+  :root:not([data-tema="claro"]) .tint-blue {
+    @apply border-brand-800/70 bg-brand-900/40 text-brand-300;
+  }
+  :root:not([data-tema="claro"]) .tint-purple {
+    @apply border-purple-800/70 bg-purple-950/50 text-purple-300;
+  }
+}
+
+:root[data-tema="escuro"] .tint-green {
+  @apply border-emerald-800/70 bg-emerald-950/50 text-emerald-300;
+}
+:root[data-tema="escuro"] .tint-red {
+  @apply border-red-900/70 bg-red-950/50 text-red-300;
+}
+:root[data-tema="escuro"] .tint-amber {
+  @apply border-amber-800/70 bg-amber-950/50 text-amber-300;
+}
+:root[data-tema="escuro"] .tint-blue {
+  @apply border-brand-800/70 bg-brand-900/40 text-brand-300;
+}
+:root[data-tema="escuro"] .tint-purple {
+  @apply border-purple-800/70 bg-purple-950/50 text-purple-300;
 }
 
 /* Esconde a seta do input number no mobile */

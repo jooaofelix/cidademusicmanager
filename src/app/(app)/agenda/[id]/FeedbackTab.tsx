@@ -40,7 +40,7 @@ export function FeedbackTab({
   return (
     <div className="space-y-5">
       {!eventDone && (
-        <p className="rounded-xl border border-amber-900/60 bg-amber-950/30 px-3 py-2.5 text-xs text-amber-200">
+        <p className="rounded-xl border tint-amber px-3 py-2.5 text-xs text-amber-200">
           Este evento ainda não foi marcado como <strong>Realizado</strong>. Você já pode registrar
           sua avaliação, mas o ideal é preencher depois que tudo acabar.
         </p>

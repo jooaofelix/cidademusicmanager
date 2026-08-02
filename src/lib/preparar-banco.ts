@@ -15,6 +15,7 @@ import { PrismaClient, type Prisma } from "@prisma/client";
 import { SCHEMA_SQL } from "./schema-gerado";
 import { semear, TESOUREIROS_INICIAIS } from "./dados-iniciais";
 import { MIGRACOES } from "./migracoes";
+import { criarDadosExemplo } from "./dados-exemplo";
 import { comRetentativa } from "./retentativa";
 
 // Número arbitrário, só precisa ser o mesmo em todas as instâncias: é o nome
@@ -65,6 +66,18 @@ async function executar(): Promise<void> {
           }
 
           await definirTesoureirosIniciais(tx);
+
+          // Com a agenda ainda vazia, enche o sistema com um mês de exemplo
+          // para ninguém abrir e ver só telas em branco. Some assim que a
+          // equipe apagar pelo botão em Equipe, e não volta.
+          if ((await tx.event.count()) === 0) {
+            console.log("[preparar-banco] Criando dados de exemplo…");
+            const r = await criarDadosExemplo(tx);
+            console.log(
+              `[preparar-banco] ${r.eventos} eventos, ${r.musicas} músicas, ` +
+                `${r.demandas} demandas, ${r.movimentacoes} lançamentos.`,
+            );
+          }
         },
         // O padrão do Prisma é 5s, curto demais para criar 12 tabelas num banco
         // que talvez esteja acordando do repouso — e para quem espera a trava.

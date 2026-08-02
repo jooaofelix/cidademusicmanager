@@ -72,7 +72,7 @@ export default async function StreamingPage() {
               mensal da distribuidora — ele já vem com todas as plataformas somadas.
             </li>
           </ul>
-          <p className="rounded-xl border border-brand-900/60 bg-brand-950/30 px-3 py-2.5 text-xs text-brand-200">
+          <p className="rounded-xl border tint-blue px-3 py-2.5 text-xs text-brand-200">
             <strong>Como usar na prática:</strong> uma vez por mês, abra o relatório da
             distribuidora e lance aqui o valor de cada plataforma. Leva 2 minutos e o
             histórico fica todo no dashboard.

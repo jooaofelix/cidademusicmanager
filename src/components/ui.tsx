@@ -81,12 +81,12 @@ export function Stat({
 }
 
 const CHIP_TONES: Record<string, string> = {
-  slate: "border-ink-600 bg-ink-800 text-slate-300",
-  green: "border-emerald-800/70 bg-emerald-950/50 text-emerald-300",
-  red: "border-red-900/70 bg-red-950/50 text-red-300",
-  amber: "border-amber-800/70 bg-amber-950/50 text-amber-300",
-  blue: "border-brand-800/70 bg-brand-950/50 text-brand-300",
-  purple: "border-purple-800/70 bg-purple-950/50 text-purple-300",
+  slate: "tint-slate",
+  green: "tint-green",
+  red: "tint-red",
+  amber: "tint-amber",
+  blue: "tint-blue",
+  purple: "tint-purple",
 };
 
 export function Chip({
@@ -128,7 +128,7 @@ export function Tabs({
           href={i.href}
           className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
             current === i.href
-              ? "border-brand-500 bg-brand-600/20 text-brand-200"
+              ? "border-brand-500 tint-blue"
               : "border-ink-700 bg-ink-850 text-slate-400"
           }`}
         >

@@ -140,7 +140,7 @@ export default async function EventoPage({
         )}
 
         {myLineup.length > 0 && (
-          <div className="rounded-xl border border-brand-900/60 bg-brand-950/30 px-3 py-2.5">
+          <div className="rounded-xl border tint-blue px-3 py-2.5">
             <p className="text-xs text-brand-200">
               Você está escalado em{" "}
               <strong>{myLineup.map((l) => l.instrument).join(", ")}</strong>

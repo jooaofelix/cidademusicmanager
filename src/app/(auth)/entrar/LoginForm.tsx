@@ -54,7 +54,7 @@ export function LoginForm({ members }: { members: Member[] }) {
       </div>
 
       {state?.error && (
-        <p className="rounded-xl border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-xl border tint-red px-3 py-2 text-sm text-red-300">
           {state.error}
         </p>
       )}

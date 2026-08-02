@@ -85,7 +85,7 @@ export function LineupTab({
                         <button
                           type="submit"
                           disabled={l.status === "CONFIRMADO"}
-                          className="btn btn-sm w-full border border-emerald-800/70 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/70 disabled:opacity-40"
+                          className="btn btn-sm w-full border tint-green hover:brightness-95 disabled:opacity-40"
                         >
                           ✓ Confirmo
                         </button>
