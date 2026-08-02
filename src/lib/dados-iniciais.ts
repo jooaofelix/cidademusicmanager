@@ -1,8 +1,12 @@
-import { PrismaClient } from "@prisma/client";
+// Os dados que o sistema cria sozinho na primeira vez que roda:
+// a equipe, os modelos de checklist e dois projetos de exemplo.
+//
+// Fonte única — usada tanto pelo preparo automático do banco quanto por
+// qualquer execução manual do seed.
 
-const db = new PrismaClient();
+import type { PrismaClient } from "@prisma/client";
 
-const MEMBERS = [
+export const INTEGRANTES = [
   { name: "João Felix", instrument: "Vocal", pin: "1000", isAdmin: true },
   { name: "Mateus Demark", instrument: "Baixo", pin: "1001" },
   { name: "Davi Belizário", instrument: "Guitarra", pin: "1002" },
@@ -14,7 +18,7 @@ const MEMBERS = [
   { name: "David Gorito", instrument: "Vocal", pin: "1008" },
 ];
 
-const TEMPLATES = [
+export const MODELOS_CHECKLIST = [
   {
     name: "Culto padrão",
     items: [
@@ -57,35 +61,32 @@ const TEMPLATES = [
   },
 ];
 
-async function main() {
-  console.log("Semeando o banco…");
+const idDoNome = (nome: string) => nome.toLowerCase().replace(/\s+/g, "-");
 
-  for (const m of MEMBERS) {
+/** Cria os dados iniciais. Seguro rodar de novo: nada é duplicado. */
+export async function semear(db: PrismaClient) {
+  for (const m of INTEGRANTES) {
+    const id = idDoNome(m.name);
     await db.member.upsert({
-      where: { id: m.name.toLowerCase().replace(/\s+/g, "-") },
-      create: { id: m.name.toLowerCase().replace(/\s+/g, "-"), ...m },
+      where: { id },
+      create: { id, ...m },
       update: { instrument: m.instrument },
     });
   }
-  console.log(`✓ ${MEMBERS.length} integrantes`);
 
-  for (const t of TEMPLATES) {
-    const exists = await db.checklistTemplate.findFirst({ where: { name: t.name } });
-    if (exists) continue;
+  for (const t of MODELOS_CHECKLIST) {
+    const existe = await db.checklistTemplate.findFirst({ where: { name: t.name } });
+    if (existe) continue;
 
     await db.checklistTemplate.create({
       data: {
         name: t.name,
-        items: {
-          create: t.items.map((i, position) => ({ ...i, position })),
-        },
+        items: { create: t.items.map((i, position) => ({ ...i, position })) },
       },
     });
   }
-  console.log(`✓ ${TEMPLATES.length} modelos de checklist`);
 
-  const projectCount = await db.project.count();
-  if (projectCount === 0) {
+  if ((await db.project.count()) === 0) {
     await db.project.createMany({
       data: [
         {
@@ -102,19 +103,7 @@ async function main() {
         },
       ],
     });
-    console.log("✓ 2 projetos de exemplo");
   }
 
-  console.log("\nPINs iniciais:");
-  for (const m of MEMBERS) {
-    console.log(`  ${m.name.padEnd(18)} ${m.pin}${m.isAdmin ? "  (admin)" : ""}`);
-  }
-  console.log("\nTroquem os PINs na aba Equipe depois do primeiro acesso.");
+  return { integrantes: INTEGRANTES.length, modelos: MODELOS_CHECKLIST.length };
 }
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => db.$disconnect());

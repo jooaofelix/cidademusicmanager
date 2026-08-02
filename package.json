@@ -4,15 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/checar-ambiente.mjs && prisma generate && prisma db push && node scripts/seed-if-empty.mjs && next build",
+    "build": "node scripts/checar-ambiente.mjs && prisma generate && node scripts/gerar-schema-sql.mjs && next build",
     "start": "next start",
-    "lint": "next lint",
-    "db:push": "prisma db push",
-    "db:seed": "node prisma/seed.mjs",
-    "setup": "prisma db push && npm run db:seed"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.mjs"
+    "lint": "next lint"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",

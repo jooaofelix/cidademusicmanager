@@ -36,7 +36,7 @@ if (problemas.length === 0) {
 }
 
 console.error("\n" + "─".repeat(64));
-console.error("  O BUILD PAROU: falta configurar variável de ambiente");
+console.error("  ATENÇÃO: falta configurar variável de ambiente");
 console.error("─".repeat(64));
 
 for (const p of problemas) {
@@ -56,8 +56,9 @@ console.error(`
     Fly.io   fly secrets set NOME="valor"
     Local    arquivo .env na raiz do projeto (copie de .env.example)
 
-  Depois de cadastrar, rode o deploy de novo.
+  O build vai continuar (ele não precisa de banco), mas o site só vai
+  funcionar de verdade depois que estas variáveis existirem.
 ─${"─".repeat(63)}
 `);
 
-process.exit(1);
+process.exit(0);
