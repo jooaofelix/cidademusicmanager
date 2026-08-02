@@ -1,5 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+
+  // O Prisma fala com o banco através de um binário compilado para um sistema
+  // operacional específico. "native" é o da máquina que roda o build; sozinho,
+  // ele não serve para hospedagens onde o build e a execução acontecem em
+  // ambientes diferentes — é o caso da Vercel, e o resultado é o site subir e
+  // então falhar com PrismaClientInitializationError em toda página.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
