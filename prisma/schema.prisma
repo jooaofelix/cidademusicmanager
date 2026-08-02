@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Pessoas
+// ---------------------------------------------------------------------------
+
+model Member {
+  id         String   @id @default(cuid())
+  name       String
+  instrument String // Baixo, Guitarra, Bateria, Teclado, Vocal, Admin...
+  pin        String // acesso simples de 4 digitos
+  isAdmin    Boolean  @default(false)
+  active     Boolean  @default(true)
+  phone      String?
+  createdAt  DateTime @default(now())
+
+  lineups   Lineup[]
+  tasks     Task[]
+  feedbacks Feedback[]
+
+  @@index([active])
+}
+
+// ---------------------------------------------------------------------------
+// Agenda / Eventos
+// ---------------------------------------------------------------------------
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   @default("CULTO") // CULTO | ENSAIO | EVENTO | GRAVACAO | OUTRO
+  status      String   @default("PLANEJADO") // PLANEJADO | CONFIRMADO | REALIZADO | CANCELADO
+  date        DateTime
+  callTime    String? // horario de chegada da equipe (ex "18:30")
+  startTime   String? // horario de inicio
+  location    String?
+  address     String?
+  notes       String?
+  driveUrl    String? // pasta do evento no Google Drive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lineups      Lineup[]
+  setlist      SetlistItem[]
+  tasks        Task[]
+  transactions Transaction[]
+  feedbacks    Feedback[]
+
+  @@index([date])
+  @@index([status])
+}
+
+// Escalação: qual músico toca o quê, e o OK dele
+model Lineup {
+  id          String    @id @default(cuid())
+  eventId     String
+  memberId    String
+  instrument  String
+  status      String    @default("PENDENTE") // PENDENTE | CONFIRMADO | RECUSADO
+  note        String?
+  respondedAt DateTime?
+
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, memberId, instrument])
+  @@index([eventId])
+  @@index([memberId])
+}
+
+// ---------------------------------------------------------------------------
+// Repertorio / Ordem de Culto
+// ---------------------------------------------------------------------------
+
+model Song {
+  id         String   @id @default(cuid())
+  title      String
+  artist     String?
+  defaultKey String? // tom padrao (ex "G", "Bm")
+  bpm        Int?
+  timeSig    String? // 4/4, 6/8...
+  versionUrl String? // link da versao (YouTube/Spotify)
+  vsUrl      String? // link do VS / multitrack (Google Drive)
+  chartUrl   String? // cifra / partitura
+  lyrics     String?
+  tags       String? // "adoracao,celebracao,natal"
+  notes      String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  setlistItems SetlistItem[]
+  royalties    RoyaltyEntry[]
+
+  @@index([title])
+}
+
+// Um item da Ordem de Culto (OC) de um evento
+model SetlistItem {
+  id       String  @id @default(cuid())
+  eventId  String
+  songId   String?
+  position Int     @default(0)
+  // valores do dia (podem diferir do padrao da musica)
+  keyUsed  String?
+  bpmUsed  Int?
+  moment   String? // Abertura, Ministracao, Oferta, Final...
+  notes    String?
+  // bloco livre (ex: "Palavra", "Avisos") quando songId = null
+  label    String?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  song  Song? @relation(fields: [songId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([songId])
+}
+
+// ---------------------------------------------------------------------------
+// Checklists / Demandas administrativas
+// ---------------------------------------------------------------------------
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  category    String    @default("GERAL") // LOGISTICA | CULTO | ADMIN | EQUIPAMENTO | FINANCEIRO | GERAL
+  priority    String    @default("MEDIA") // BAIXA | MEDIA | ALTA
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  dueDate     DateTime?
+  position    Int       @default(0)
+  eventId     String?
+  assigneeId  String?
+  createdAt   DateTime  @default(now())
+
+  event    Event?  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  assignee Member? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([assigneeId])
+  @@index([done])
+}
+
+// Modelo de checklist reaproveitavel (ex: "Culto padrao", "Viagem")
+model ChecklistTemplate {
+  id    String                  @id @default(cuid())
+  name  String
+  items ChecklistTemplateItem[]
+}
+
+model ChecklistTemplateItem {
+  id         String @id @default(cuid())
+  templateId String
+  title      String
+  category   String @default("GERAL")
+  priority   String @default("MEDIA")
+  position   Int    @default(0)
+
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+// ---------------------------------------------------------------------------
+// Financeiro
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id          String   @id @default(cuid())
+  date        DateTime
+  type        String // ENTRADA | SAIDA
+  category    String // OFERTA | CACHE | DOACAO | STREAMING | TRANSPORTE | ALIMENTACAO | EQUIPAMENTO | ESTUDIO | OUTRO
+  amountCents Int
+  description String?
+  method      String? // PIX | DINHEIRO | TRANSFERENCIA | CARTAO
+  eventId     String?
+  projectId   String?
+  createdAt   DateTime @default(now())
+
+  event   Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([date])
+  @@index([type])
+  @@index([eventId])
+}
+
+// Projetos / Sonhos (metas de arrecadacao)
+model Project {
+  id           String    @id @default(cuid())
+  name         String
+  description  String?
+  targetCents  Int
+  deadline     DateTime?
+  status       String    @default("ATIVO") // ATIVO | CONCLUIDO | PAUSADO
+  position     Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  transactions Transaction[]
+}
+
+// Receita de streaming lancada manualmente (relatorio mensal das plataformas)
+model RoyaltyEntry {
+  id          String   @id @default(cuid())
+  platform    String // YOUTUBE | SPOTIFY | APPLE_MUSIC | DEEZER | AMAZON | OUTRO
+  period      String // "2026-07"
+  amountCents Int      @default(0)
+  streams     Int?
+  songId      String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  song Song? @relation(fields: [songId], references: [id], onDelete: SetNull)
+
+  @@index([period])
+  @@index([platform])
+}
+
+// ---------------------------------------------------------------------------
+// Feedback pos-evento
+// ---------------------------------------------------------------------------
+
+model Feedback {
+  id        String   @id @default(cuid())
+  eventId   String
+  memberId  String
+  sector    String // LOCAL | ORGANIZACAO | VIAGEM | SOM | REPERTORIO | EQUIPE | ESPIRITUAL | ESTRUTURA
+  rating    Int // 1..5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, memberId, sector])
+  @@index([eventId])
+}
