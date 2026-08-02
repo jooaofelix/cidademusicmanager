@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireMember } from "@/lib/session";
+import { requireTreasurer } from "@/lib/session";
 import { fromInputDate, parseMoneyToCents } from "@/lib/format";
 
 function str(fd: FormData, key: string) {
@@ -22,7 +22,7 @@ function revalidateFinance() {
 // ------------------------------------------------------------ lançamentos
 
 export async function createTransaction(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
 
   const amountCents = parseMoneyToCents(String(formData.get("amount") || ""));
   if (amountCents <= 0) return;
@@ -46,7 +46,7 @@ export async function createTransaction(formData: FormData) {
 }
 
 export async function deleteTransaction(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
   await db.transaction.delete({ where: { id: String(formData.get("id")) } });
   revalidateFinance();
 }
@@ -54,7 +54,7 @@ export async function deleteTransaction(formData: FormData) {
 // ------------------------------------------------------------ projetos / sonhos
 
 export async function createProject(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
 
   const name = str(formData, "name");
   const target = parseMoneyToCents(String(formData.get("targetAmount") || ""));
@@ -75,7 +75,7 @@ export async function createProject(formData: FormData) {
 }
 
 export async function updateProject(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
 
   const id = String(formData.get("id"));
   const target = parseMoneyToCents(String(formData.get("targetAmount") || ""));
@@ -96,14 +96,14 @@ export async function updateProject(formData: FormData) {
 }
 
 export async function deleteProject(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
   await db.project.delete({ where: { id: String(formData.get("id")) } });
   revalidateFinance();
 }
 
 /** Guarda um valor do caixa para um projeto (registra como entrada vinculada). */
 export async function contributeToProject(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
 
   const projectId = String(formData.get("projectId"));
   const amountCents = parseMoneyToCents(String(formData.get("amount") || ""));
@@ -129,7 +129,7 @@ export async function contributeToProject(formData: FormData) {
 // ------------------------------------------------------------ streaming
 
 export async function saveRoyalty(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
 
   const platform = str(formData, "platform");
   const period = str(formData, "period");
@@ -168,7 +168,7 @@ export async function saveRoyalty(formData: FormData) {
 }
 
 export async function deleteRoyalty(formData: FormData) {
-  await requireMember();
+  await requireTreasurer();
   await db.royaltyEntry.delete({ where: { id: String(formData.get("id")) } });
   revalidateFinance();
 }

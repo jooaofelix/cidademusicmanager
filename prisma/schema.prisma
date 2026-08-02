@@ -24,6 +24,9 @@ model Member {
   instrument String // Baixo, Guitarra, Bateria, Teclado, Vocal, Admin...
   pin        String // acesso simples de 4 digitos
   isAdmin    Boolean  @default(false)
+  // Quem cuida do dinheiro: vê lançamentos, projetos e streaming, e escolhe
+  // quem mais tem esse acesso. O painel de finanças é aberto a todos.
+  isTreasurer Boolean @default(false)
   active     Boolean  @default(true)
   phone      String?
   createdAt  DateTime @default(now())

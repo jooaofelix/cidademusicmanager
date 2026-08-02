@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { abasFinancas } from "@/lib/abas-financas";
+import { requireTreasurer } from "@/lib/session";
 import { PageHeader, EmptyState, ProgressBar, Tabs, Chip } from "@/components/ui";
 import { brl, fmtDate, toInputDate } from "@/lib/format";
 import {
@@ -11,6 +13,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function ProjetosPage() {
+  await requireTreasurer();
+  const euCuidoDoCaixa = true;
+
   const projects = await db.project.findMany({
     orderBy: [{ status: "asc" }, { position: "asc" }],
     include: { transactions: { select: { amountCents: true, type: true } } },
@@ -24,15 +29,7 @@ export default async function ProjetosPage() {
         back={{ href: "/financas" }}
       />
 
-      <Tabs
-        current="/financas/projetos"
-        items={[
-          { href: "/financas", label: "Dashboard" },
-          { href: "/financas/lancamentos", label: "Lançamentos" },
-          { href: "/financas/projetos", label: "Projetos" },
-          { href: "/financas/streaming", label: "Streaming" },
-        ]}
-      />
+      <Tabs current="/financas/projetos" items={abasFinancas(euCuidoDoCaixa)} />
 
       {projects.length === 0 ? (
         <EmptyState

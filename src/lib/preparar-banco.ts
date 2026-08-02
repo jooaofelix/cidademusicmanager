@@ -13,7 +13,8 @@
 
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { SCHEMA_SQL } from "./schema-gerado";
-import { semear } from "./dados-iniciais";
+import { semear, TESOUREIROS_INICIAIS } from "./dados-iniciais";
+import { MIGRACOES } from "./migracoes";
 import { comRetentativa } from "./retentativa";
 
 // Número arbitrário, só precisa ser o mesmo em todas as instâncias: é o nome
@@ -55,11 +56,15 @@ async function executar(): Promise<void> {
             console.log("[preparar-banco] Tabelas criadas.");
           }
 
+          await aplicarMigracoes(tx);
+
           if ((await tx.member.count()) === 0) {
             console.log("[preparar-banco] Cadastrando a equipe inicial…");
             const { integrantes, modelos } = await semear(tx);
             console.log(`[preparar-banco] ${integrantes} integrantes, ${modelos} modelos.`);
           }
+
+          await definirTesoureirosIniciais(tx);
         },
         // O padrão do Prisma é 5s, curto demais para criar 12 tabelas num banco
         // que talvez esteja acordando do repouso — e para quem espera a trava.
@@ -69,6 +74,31 @@ async function executar(): Promise<void> {
   } finally {
     await cliente.$disconnect();
   }
+}
+
+/** Acrescenta ao banco existente as colunas que o schema ganhou depois. */
+async function aplicarMigracoes(tx: Prisma.TransactionClient): Promise<void> {
+  for (const migracao of MIGRACOES) {
+    await tx.$executeRawUnsafe(migracao.sql);
+  }
+}
+
+/**
+ * Marca os primeiros tesoureiros — só enquanto não houver nenhum.
+ *
+ * Depois que a equipe começa a gerenciar isso na tela, esta função não age
+ * mais: se ela reaplicasse a lista a cada partida, desfaria toda remoção
+ * feita pelos próprios tesoureiros.
+ */
+async function definirTesoureirosIniciais(tx: Prisma.TransactionClient): Promise<void> {
+  if ((await tx.member.count({ where: { isTreasurer: true } })) > 0) return;
+
+  const { count } = await tx.member.updateMany({
+    where: { name: { in: [...TESOUREIROS_INICIAIS] } },
+    data: { isTreasurer: true },
+  });
+
+  if (count > 0) console.log(`[preparar-banco] ${count} tesoureiro(s) definido(s).`);
 }
 
 async function temTabelas(tx: Prisma.TransactionClient): Promise<boolean> {

@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { abasFinancas } from "@/lib/abas-financas";
+import { requireTreasurer } from "@/lib/session";
 import { PageHeader, EmptyState, Stat, Tabs, Chip, ProgressBar } from "@/components/ui";
 import { brl, currentPeriod, periodLabel } from "@/lib/format";
 import { PLATFORMS, labelOf } from "@/lib/constants";
@@ -7,6 +9,9 @@ import { deleteRoyalty, saveRoyalty } from "../actions";
 export const dynamic = "force-dynamic";
 
 export default async function StreamingPage() {
+  await requireTreasurer();
+  const euCuidoDoCaixa = true;
+
   const [entries, songs] = await Promise.all([
     db.royaltyEntry.findMany({
       orderBy: [{ period: "desc" }, { platform: "asc" }],
@@ -44,15 +49,7 @@ export default async function StreamingPage() {
         back={{ href: "/financas" }}
       />
 
-      <Tabs
-        current="/financas/streaming"
-        items={[
-          { href: "/financas", label: "Dashboard" },
-          { href: "/financas/lancamentos", label: "Lançamentos" },
-          { href: "/financas/projetos", label: "Projetos" },
-          { href: "/financas/streaming", label: "Streaming" },
-        ]}
-      />
+      <Tabs current="/financas/streaming" items={abasFinancas(euCuidoDoCaixa)} />
 
       <details className="card mb-4">
         <summary className="cursor-pointer text-sm font-semibold text-brand-300">

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { requireMember } from "@/lib/session";
+import { abasFinancas } from "@/lib/abas-financas";
 import { PageHeader, Stat, ProgressBar, Tabs } from "@/components/ui";
 import { MonthlyChart, type MonthPoint } from "@/components/MonthlyChart";
 import { brl, fmtDate, periodLabel } from "@/lib/format";
@@ -8,6 +10,9 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, labelOf } from "@/lib/constants"
 export const dynamic = "force-dynamic";
 
 export default async function FinancasPage() {
+  const eu = await requireMember();
+  const euCuidoDoCaixa = eu.isTreasurer;
+
   const [transactions, projects, royalties] = await Promise.all([
     db.transaction.findMany({
       orderBy: { date: "desc" },
@@ -79,15 +84,7 @@ export default async function FinancasPage() {
     <>
       <PageHeader title="Finanças" subtitle="Caixa, entradas, saídas e projetos" />
 
-      <Tabs
-        current="/financas"
-        items={[
-          { href: "/financas", label: "Dashboard" },
-          { href: "/financas/lancamentos", label: "Lançamentos" },
-          { href: "/financas/projetos", label: "Projetos" },
-          { href: "/financas/streaming", label: "Streaming" },
-        ]}
-      />
+      <Tabs current="/financas" items={abasFinancas(euCuidoDoCaixa)} />
 
       <div className="card mb-4 text-center">
         <p className="text-xs uppercase tracking-wide text-slate-400">Em caixa</p>
@@ -165,9 +162,11 @@ export default async function FinancasPage() {
         <section className="card mb-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="section-title">Projetos e sonhos</h2>
-            <Link href="/financas/projetos" className="text-xs text-brand-400 underline underline-offset-2">
-              ver todos
-            </Link>
+            {euCuidoDoCaixa && (
+              <Link href="/financas/projetos" className="text-xs text-brand-400 underline underline-offset-2">
+                ver todos
+              </Link>
+            )}
           </div>
           <ul className="space-y-4">
             {projects.slice(0, 3).map((p) => {
@@ -197,9 +196,11 @@ export default async function FinancasPage() {
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="section-title">Últimos lançamentos</h2>
-          <Link href="/financas/lancamentos" className="text-xs text-brand-400 underline underline-offset-2">
-            ver todos
-          </Link>
+          {euCuidoDoCaixa && (
+            <Link href="/financas/lancamentos" className="text-xs text-brand-400 underline underline-offset-2">
+              ver todos
+            </Link>
+          )}
         </div>
         {transactions.length === 0 ? (
           <p className="rounded-xl border border-dashed border-ink-600 px-4 py-6 text-center text-sm text-slate-500">

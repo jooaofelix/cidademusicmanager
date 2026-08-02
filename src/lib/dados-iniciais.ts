@@ -61,6 +61,9 @@ export const MODELOS_CHECKLIST = [
   },
 ];
 
+/** Quem cuida do dinheiro quando o sistema é instalado pela primeira vez. */
+export const TESOUREIROS_INICIAIS = ["Davi Belizário", "David Gorito"] as const;
+
 const idDoNome = (nome: string) => nome.toLowerCase().replace(/\s+/g, "-");
 
 /** Cria os dados iniciais. Seguro rodar de novo: nada é duplicado. */

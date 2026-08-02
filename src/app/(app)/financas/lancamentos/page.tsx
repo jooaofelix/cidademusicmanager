@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { requireTreasurer } from "@/lib/session";
 import { PageHeader, Chip, Tabs, EmptyState } from "@/components/ui";
 import { brl, fmtDate, toInputDate } from "@/lib/format";
 import {
@@ -16,6 +17,8 @@ export default async function LancamentosPage({
 }: {
   searchParams: Promise<{ tipo?: string }>;
 }) {
+  await requireTreasurer();
+
   const { tipo } = await searchParams;
 
   const [transactions, events, projects] = await Promise.all([

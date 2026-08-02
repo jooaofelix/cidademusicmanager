@@ -54,6 +54,8 @@ export type SessionMember = {
   name: string;
   instrument: string;
   isAdmin: boolean;
+  /** Cuida do dinheiro: lançamentos, projetos, streaming e quem mais acessa. */
+  isTreasurer: boolean;
 };
 
 export async function getCurrentMember(): Promise<SessionMember | null> {
@@ -70,7 +72,14 @@ export async function getCurrentMember(): Promise<SessionMember | null> {
 
   const member = await db.member.findUnique({
     where: { id },
-    select: { id: true, name: true, instrument: true, isAdmin: true, active: true },
+    select: {
+      id: true,
+      name: true,
+      instrument: true,
+      isAdmin: true,
+      isTreasurer: true,
+      active: true,
+    },
   });
   if (!member || !member.active) return null;
 
@@ -79,6 +88,7 @@ export async function getCurrentMember(): Promise<SessionMember | null> {
     name: member.name,
     instrument: member.instrument,
     isAdmin: member.isAdmin,
+    isTreasurer: member.isTreasurer,
   };
 }
 
@@ -86,5 +96,16 @@ export async function getCurrentMember(): Promise<SessionMember | null> {
 export async function requireMember(): Promise<SessionMember> {
   const member = await getCurrentMember();
   if (!member) redirect("/entrar");
+  return member;
+}
+
+/**
+ * Usa nas telas de dinheiro além do painel. Quem não cuida do caixa volta
+ * para o painel de finanças, que é aberto a todos — em vez de tomar um erro
+ * ou cair no login já estando logado.
+ */
+export async function requireTreasurer(): Promise<SessionMember> {
+  const member = await requireMember();
+  if (!member.isTreasurer) redirect("/financas");
   return member;
 }
