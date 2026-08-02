@@ -41,6 +41,10 @@ Não precisa instalar nada, não precisa de terminal e não pede cartão de cré
 
 4. Clique em **Deploy** e espere uns 2 minutos.
 
+> ⚠️ **Cadastre as duas variáveis ANTES de clicar em Deploy.** Se esquecer, o build
+> para com uma mensagem explicando qual faltou — aí é só preencher e mandar de novo
+> em *Deployments → Redeploy*.
+
 Pronto. A Vercel mostra o link (algo como `https://cidademusicmanager.vercel.app`).
 **Esse é o link do sistema de vocês** — as tabelas e a equipe são criadas sozinhas
 no primeiro deploy.
