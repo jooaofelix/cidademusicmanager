@@ -7,53 +7,100 @@ Este guia é para colocar o sistema no ar e a banda usando. Não precisa saber p
 ## Parte 1 — Colocar no ar
 
 O sistema precisa morar em algum lugar da internet para todo mundo acessar pelo celular.
-Ele já vem pronto para isso — só falta escolher onde.
+Ele já vem pronto — só falta escolher onde. **Escolha uma das três opções abaixo.**
 
-### A opção mais barata: Fly.io
+---
 
-Custa em torno de **R$ 10 a R$ 20 por mês** (o app "dorme" quando ninguém está usando e
-acorda sozinho, então vocês pagam pouco).
+### Opção A — Vercel + Neon · **de graça, só pelo navegador** ⭐
 
-1. Crie uma conta em [fly.io](https://fly.io) e instale o programa deles seguindo
-   [estas instruções](https://fly.io/docs/flyctl/install/).
-2. Abra o terminal na pasta do projeto e rode, um comando de cada vez:
+Não precisa instalar nada, não precisa de terminal e não pede cartão de crédito.
+É a opção recomendada se o objetivo é gastar zero.
+
+**1. Crie o banco de dados (Neon)**
+
+1. Entre em [neon.com](https://neon.com) e crie a conta (dá para entrar com o Google).
+2. Clique em *Create project*. Dê o nome `cidade-music` e escolha a região mais
+   próxima (*AWS São Paulo*, se aparecer).
+3. Na tela seguinte ele mostra uma **connection string**, algo como
+   `postgresql://usuario:senha@ep-alguma-coisa.neon.tech/neondb?sslmode=require`.
+   **Copie e guarde** — vamos usar no passo 3.
+
+**2. Prepare o projeto para o Postgres**
+
+Alguém com acesso ao código roda **uma vez**:
+
+```bash
+node scripts/usar-postgres.mjs
+git add -A && git commit -m "Muda para PostgreSQL" && git push
+```
+
+**3. Publique (Vercel)**
+
+1. Entre em [vercel.com](https://vercel.com) e crie a conta **com o GitHub**.
+2. Clique em *Add New → Project* e escolha o repositório `cidademusicmanager`.
+3. Antes de clicar em Deploy, abra **Environment Variables** e cadastre as duas:
+
+   | Nome | Valor |
+   |---|---|
+   | `DATABASE_URL` | a connection string que você copiou do Neon |
+   | `SESSION_SECRET` | qualquer texto longo e aleatório que você inventar (30+ caracteres, sem espaços) |
+
+4. Clique em **Deploy** e espere uns 2 minutos.
+
+Pronto. A Vercel mostra o link (algo como `https://cidademusicmanager.vercel.app`).
+**Esse é o link do sistema de vocês** — as tabelas e a equipe são criadas sozinhas
+no primeiro deploy.
+
+> 💡 No Neon, se aparecerem duas connection strings (*pooled* e *direct*), use a
+> **direct**. Para uma equipe do tamanho de vocês funciona melhor e evita erro no deploy.
+
+---
+
+### Opção B — Railway · ~US$ 5/mês, também só pelo navegador
+
+Se preferir manter o banco em arquivo (mais simples de fazer backup), o Railway
+publica direto do GitHub sem terminal:
+
+1. Entre em [railway.app](https://railway.app) com o GitHub.
+2. *New Project → Deploy from GitHub repo* → escolha o repositório.
+3. Em **Variables**, adicione `SESSION_SECRET` com um texto longo e aleatório.
+4. Em **Settings → Volumes**, crie um volume com o caminho de montagem **`/data`**.
+
+> ⚠️ **O volume em `/data` não é opcional.** É onde o banco fica guardado. Sem ele,
+> tudo que vocês cadastrarem some no próximo deploy.
+
+---
+
+### Opção C — Fly.io · ~US$ 2 a 4/mês, precisa de terminal
+
+A mais barata das pagas, porque o app "dorme" quando ninguém está usando.
+
+1. Crie conta em [fly.io](https://fly.io) e instale o
+   [flyctl](https://fly.io/docs/flyctl/install/).
+2. Na pasta do projeto:
 
    ```bash
    fly auth login
-   fly launch --no-deploy
-   ```
-
-   Quando ele perguntar se quer usar as configurações existentes (`fly.toml`), responda
-   **sim**. Quando perguntar sobre banco de dados (Postgres/Redis), responda **não** —
-   o banco já está incluído.
-
-3. Crie o disco onde os dados ficam guardados e a chave de segurança:
-
-   ```bash
+   fly launch --no-deploy     # aceite o fly.toml existente; recuse Postgres/Redis
    fly volumes create cidade_data --size 1 --region gru
    fly secrets set SESSION_SECRET="$(openssl rand -base64 32)"
-   ```
-
-4. Publique:
-
-   ```bash
    fly deploy
    ```
 
-   No fim ele mostra o endereço, algo como `https://cidade-music.fly.dev`. **Esse é o
-   link do sistema de vocês.**
+---
 
-### Outras opções
+### Comparando
 
-| Onde | Custo | Observação |
-|---|---|---|
-| **Railway** | ~US$ 5/mês | Conecta no GitHub e publica sozinho. Precisa adicionar um *volume* em `/data`. |
-| **Render** | ~US$ 7/mês | Simples, mas o disco persistente só existe no plano pago. O `render.yaml` já está configurado. |
-| **Um computador na igreja** | grátis | Funciona, mas precisa ficar ligado e ter internet fixa. |
+| | Vercel + Neon | Railway | Fly.io |
+|---|---|---|---|
+| Custo | **grátis** | ~US$ 5/mês | ~US$ 2–4/mês |
+| Precisa de terminal? | só uma vez, para trocar o banco | não | sim |
+| Pede cartão? | não | sim | sim |
+| Banco | Postgres (na nuvem) | arquivo no volume | arquivo no volume |
+| Backup | painel do Neon | copiar 1 arquivo | copiar 1 arquivo |
 
-> ⚠️ **O ponto que não pode falhar:** onde quer que vocês publiquem, precisa existir um
-> **disco/volume persistente montado em `/data`**. É lá que fica o banco de dados. Sem
-> isso, tudo que vocês cadastrarem some no próximo deploy.
+Se ninguém da equipe se sente à vontade com terminal e o objetivo é não gastar,
+vá de **Opção A**.
 
 ---
 
@@ -140,13 +187,15 @@ e nenhuma delas oferece isso de forma automática para terceiros. Por isso a aba
 distribuidora e registram o valor. Leva 2 minutos e o histórico fica todo no dashboard.
 
 **Como faço backup?**
-O banco inteiro é um arquivo só. No Fly.io:
+Depende de onde vocês publicaram:
 
-```bash
-fly ssh console -C "cat /data/cidade.db" > backup-cidade.db
-```
-
-Vale fazer uma vez por mês e guardar no Drive.
+- **Neon (Opção A):** o painel do Neon já guarda o histórico e permite voltar o banco
+  para um momento anterior. Não precisa fazer nada manualmente.
+- **Railway ou Fly.io:** o banco inteiro é um arquivo só. No Fly.io:
+  ```bash
+  fly ssh console -C "cat /data/cidade.db" > backup-cidade.db
+  ```
+  Vale fazer uma vez por mês e guardar no Drive.
 
 **Alguém errou e apagou algo. E agora?**
 Se tiver backup, é só restaurar o arquivo. Por isso o backup mensal importa. Só quem é
