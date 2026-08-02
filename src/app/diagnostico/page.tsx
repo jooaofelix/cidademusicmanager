@@ -33,13 +33,32 @@ type Verificacao = {
   detalhe: string;
 };
 
-/** Extrai host e banco da connection string, jogando fora usuário e senha. */
-function resumirEndereco(url: string): string {
+/**
+ * Confere o formato e resume o endereço, jogando fora usuário e senha.
+ *
+ * O erro mais comum aqui é colar o "Copy snippet" do Neon, que não é o
+ * endereço e sim um comando de terminal: psql 'postgresql://…'. Vale
+ * apontar isso pelo nome, porque a diferença não é óbvia olhando.
+ */
+function conferirEndereco(url: string): { ok: boolean; detalhe: string } {
+  if (/^\s*psql\s/i.test(url)) {
+    return {
+      ok: false,
+      detalhe:
+        "veio o comando do terminal (psql '…'), não o endereço. " +
+        "Guarde só a parte entre aspas, que começa com postgresql://",
+    };
+  }
+
+  if (!/^postgresql:\/\/|^postgres:\/\//i.test(url.trim())) {
+    return { ok: false, detalhe: "formato irreconhecível — deveria começar com postgresql://" };
+  }
+
   try {
-    const u = new URL(url);
-    return `${u.hostname}${u.pathname}`;
+    const u = new URL(url.trim());
+    return { ok: true, detalhe: `definida → ${u.hostname}${u.pathname}` };
   } catch {
-    return "formato irreconhecível — deveria começar com postgresql://";
+    return { ok: false, detalhe: "endereço malformado — confira se veio inteiro, sem espaços" };
   }
 }
 
@@ -47,12 +66,11 @@ async function verificar(): Promise<Verificacao[]> {
   const checagens: Verificacao[] = [];
 
   const urlBanco = process.env.DATABASE_URL;
+  const endereco = urlBanco ? conferirEndereco(urlBanco) : null;
   checagens.push({
     nome: "DATABASE_URL",
-    ok: Boolean(urlBanco),
-    detalhe: urlBanco
-      ? `definida → ${resumirEndereco(urlBanco)}`
-      : "NÃO DEFINIDA — cadastre em Settings → Environment Variables",
+    ok: endereco?.ok ?? false,
+    detalhe: endereco?.detalhe ?? "NÃO DEFINIDA — cadastre em Settings → Environment Variables",
   });
 
   const segredo = process.env.SESSION_SECRET;
