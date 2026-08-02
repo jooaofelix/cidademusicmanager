@@ -5,12 +5,19 @@
 // falhasse, o deploy inteiro morria. Aqui o build não toca no banco: ele só
 // compila. O preparo acontece na primeira consulta real.
 //
-// Roda uma vez por processo e é seguro em paralelo: várias visitas
-// simultâneas compartilham a mesma promessa, e o SQL usa IF NOT EXISTS.
+// A hospedagem sobe várias instâncias em paralelo, e cada uma tem a sua
+// própria memória: a promessa abaixo evita trabalho repetido dentro de um
+// processo, mas não coordena nada entre processos. Quem faz isso é uma trava
+// no próprio Postgres — sem ela, duas instâncias criam as mesmas tabelas ao
+// mesmo tempo e a segunda quebra com "relation already exists".
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Prisma } from "@prisma/client";
 import { SCHEMA_SQL } from "./schema-gerado";
 import { semear } from "./dados-iniciais";
+
+// Número arbitrário, só precisa ser o mesmo em todas as instâncias: é o nome
+// da trava. Qualquer outro sistema no mesmo banco usaria um número diferente.
+const TRAVA_PREPARO = 8274123456789n;
 
 let emAndamento: Promise<void> | null = null;
 
@@ -31,30 +38,42 @@ async function executar(): Promise<void> {
   const cliente = new PrismaClient();
 
   try {
-    if (!(await temTabelas(cliente))) {
-      console.log("[preparar-banco] Banco vazio — criando as tabelas…");
-      await aplicarSchema(cliente);
-      console.log("[preparar-banco] Tabelas criadas.");
-    }
+    await cliente.$transaction(
+      async (tx) => {
+        // Só uma instância passa daqui por vez; as outras ficam esperando e,
+        // quando entram, já encontram tudo pronto e não fazem nada. A trava
+        // é liberada sozinha no fim da transação, inclusive se algo falhar.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TRAVA_PREPARO})`;
 
-    if ((await cliente.member.count()) === 0) {
-      console.log("[preparar-banco] Cadastrando a equipe inicial…");
-      const { integrantes, modelos } = await semear(cliente);
-      console.log(`[preparar-banco] ${integrantes} integrantes, ${modelos} modelos.`);
-    }
+        if (!(await temTabelas(tx))) {
+          console.log("[preparar-banco] Banco vazio — criando as tabelas…");
+          await aplicarSchema(tx);
+          console.log("[preparar-banco] Tabelas criadas.");
+        }
+
+        if ((await tx.member.count()) === 0) {
+          console.log("[preparar-banco] Cadastrando a equipe inicial…");
+          const { integrantes, modelos } = await semear(tx);
+          console.log(`[preparar-banco] ${integrantes} integrantes, ${modelos} modelos.`);
+        }
+      },
+      // O padrão do Prisma é 5s, curto demais para criar 12 tabelas num banco
+      // que talvez esteja acordando do repouso — e para quem espera a trava.
+      { timeout: 60_000, maxWait: 60_000 },
+    );
   } finally {
     await cliente.$disconnect();
   }
 }
 
-async function temTabelas(cliente: PrismaClient): Promise<boolean> {
-  const linhas = await cliente.$queryRaw<{ existe: boolean }[]>`
+async function temTabelas(tx: Prisma.TransactionClient): Promise<boolean> {
+  const linhas = await tx.$queryRaw<{ existe: boolean }[]>`
     SELECT to_regclass('public."Member"') IS NOT NULL AS existe
   `;
   return linhas[0]?.existe === true;
 }
 
-async function aplicarSchema(cliente: PrismaClient): Promise<void> {
+async function aplicarSchema(tx: Prisma.TransactionClient): Promise<void> {
   // O SQL gerado vem como um script com vários comandos. O Prisma não aceita
   // múltiplos comandos numa execução só, então separamos no ponto-e-vírgula
   // que termina uma linha — os comandos gerados nunca têm ; no meio.
@@ -77,11 +96,11 @@ async function aplicarSchema(cliente: PrismaClient): Promise<void> {
   }
 
   for (const comando of comandos) {
-    await cliente.$executeRawUnsafe(comando);
+    await tx.$executeRawUnsafe(comando);
   }
 
   // Confere de verdade, em vez de confiar que os comandos funcionaram.
-  if (!(await temTabelas(cliente))) {
+  if (!(await temTabelas(tx))) {
     throw new Error("As tabelas não apareceram depois de aplicar o schema.");
   }
 }

@@ -4,7 +4,7 @@
 // Fonte única — usada tanto pelo preparo automático do banco quanto por
 // qualquer execução manual do seed.
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 export const INTEGRANTES = [
   { name: "João Felix", instrument: "Vocal", pin: "1000", isAdmin: true },
@@ -64,7 +64,7 @@ export const MODELOS_CHECKLIST = [
 const idDoNome = (nome: string) => nome.toLowerCase().replace(/\s+/g, "-");
 
 /** Cria os dados iniciais. Seguro rodar de novo: nada é duplicado. */
-export async function semear(db: PrismaClient) {
+export async function semear(db: Prisma.TransactionClient) {
   for (const m of INTEGRANTES) {
     const id = idDoNome(m.name);
     await db.member.upsert({
