@@ -95,8 +95,8 @@ Requisitos: Node.js 20 ou superior.
 
 ```bash
 npm install
-cp .env.example .env   # ajuste SESSION_SECRET
-npm run setup          # cria o banco + a equipe e os modelos de checklist
+cp .env.example .env   # aponte DATABASE_URL para um Postgres e ajuste SESSION_SECRET
+npm run setup          # cria as tabelas + a equipe e os modelos de checklist
 npm run dev            # http://localhost:3000
 ```
 
@@ -136,68 +136,45 @@ cheia, sem barra de navegador, igual a um app nativo.
 > 📖 **Se você não é a pessoa técnica da equipe, use o
 > [guia passo a passo em linguagem simples](docs/COMECAR.md).**
 
-O app roda em container. O `Dockerfile` já faz tudo: build, migrações do banco no boot e,
-se o banco estiver vazio, cadastro automático da equipe — o primeiro deploy sobe pronto
-para usar.
+O projeto está configurado para **PostgreSQL**, que roda em qualquer host — inclusive
+nos que não oferecem disco persistente, como a Vercel. O build cria as tabelas
+(`prisma db push`) e cadastra a equipe automaticamente no primeiro deploy.
 
-O padrão é SQLite, que exige um **volume persistente montado em `/data`** — sem ele o
-banco é recriado a cada deploy e vocês perdem tudo. Se o host não oferecer volume (como
-a Vercel), use o caminho com Postgres abaixo.
+### Recomendado: Vercel + Neon (grátis)
 
-Configurações prontas no repositório:
-
-| Onde | Custo | Banco | Config |
-|---|---|---|---|
-| **Vercel + Neon** — não precisa de terminal | **grátis** | Postgres gerenciado | `scripts/usar-postgres.mjs` |
-| **Railway** — publica do GitHub | ~US$ 5/mês | SQLite em volume | `railway.json` |
-| **Fly.io** — mais barato das pagas | ~US$ 2–4/mês | SQLite em volume | `fly.toml` |
-| **Render** | ~US$ 7/mês (disco é pago) | SQLite em volume | `render.yaml` |
-
-### Caminho gratuito: Vercel + Neon
-
-Não precisa de disco persistente porque o banco fica num Postgres gerenciado.
-Rode uma vez, faça commit e publique pela interface da Vercel:
-
-```bash
-node scripts/usar-postgres.mjs   # troca o provider e o build para `db push`
-git add -A && git commit -m "Muda para PostgreSQL" && git push
-```
-
-Na Vercel, cadastre `DATABASE_URL` (a connection string do Neon) e `SESSION_SECRET`.
-O primeiro build cria as tabelas e cadastra a equipe sozinho.
-
-### Caminho com SQLite: Fly.io, Railway ou Render
-
-Aqui vale o requisito do volume. Fly.io, do zero:
-
-```bash
-fly launch --no-deploy                            # aceite o fly.toml existente
-fly volumes create cidade_data --size 1 --region gru
-fly secrets set SESSION_SECRET="$(openssl rand -base64 32)"
-fly deploy
-```
-
-Variáveis de ambiente:
+1. Crie um Postgres em [neon.com](https://neon.com) e copie a *connection string*.
+2. Na [vercel.com](https://vercel.com), importe o repositório.
+3. Cadastre as variáveis de ambiente e clique em Deploy.
 
 | Variável | Valor |
 |---|---|
-| `DATABASE_URL` | `file:/data/cidade.db` (já é o padrão da imagem) |
-| `SESSION_SECRET` | uma chave aleatória longa — **obrigatória em produção** |
+| `DATABASE_URL` | connection string do Postgres (no Neon, use a **direct**) |
+| `SESSION_SECRET` | chave aleatória longa — **obrigatória em produção** |
+
+Passo a passo em linguagem simples: [`docs/COMECAR.md`](docs/COMECAR.md).
+
+### Outros hosts
+
+`Dockerfile`, `railway.json`, `fly.toml` e `render.yaml` estão no repositório e
+funcionam com o mesmo `DATABASE_URL` de Postgres. O `scripts/start.sh` detecta se
+existem migrações e escolhe entre `migrate deploy` e `db push`.
+
+### Voltar para SQLite
+
+Se algum dia quiserem o banco em arquivo (backup = copiar 1 arquivo), é reverter o
+`provider` do `prisma/schema.prisma` para `sqlite`, rodar
+`npx prisma migrate dev --name init` e montar um volume em `/data`. O código do app
+não muda.
 
 ### Backup
 
-Com SQLite o backup é copiar um arquivo:
-
-```bash
-fly ssh console -C "cat /data/cidade.db" > backup-cidade-$(date +%F).db
-```
-
-Vale fazer uma vez por mês.
+O painel do Neon guarda histórico e permite restaurar o banco para um momento
+anterior — não precisa de rotina manual.
 
 ## Stack
 
 - **Next.js 15** (App Router, Server Actions) + **React 19** + **TypeScript**
-- **Prisma** + **SQLite** por padrão, **PostgreSQL** com um comando — o código do app é o mesmo nos dois
+- **Prisma** + **PostgreSQL** (o código do app roda igual em SQLite, ver README)
 - **Tailwind CSS** — interface mobile-first, tema escuro
 - Sessão por cookie assinado com HMAC — sem dependência de serviço externo de auth
 
@@ -210,7 +187,7 @@ prisma/
 scripts/
   start.sh           boot de produção: migra, semeia se vazio, sobe o servidor
   seed-if-empty.mjs  só semeia no primeiro deploy; reiniciar não duplica nada
-  usar-postgres.mjs  troca SQLite -> PostgreSQL (para hosts sem disco)
+  usar-postgres.mjs  converte o projeto de SQLite para PostgreSQL (já aplicado)
 src/
   app/(auth)/entrar  login por PIN
   app/(app)/         área logada

@@ -1,11 +1,18 @@
 #!/bin/sh
 # Sobe o app em produção.
-# Roda as migrações antes de tudo e, se o banco estiver vazio, cria a equipe
-# e os modelos de checklist — assim o primeiro deploy já abre pronto pra usar.
+# Sincroniza o banco antes de tudo e, se ele estiver vazio, cria a equipe e os
+# modelos de checklist — assim o primeiro deploy já abre pronto pra usar.
 set -e
 
-echo "→ Aplicando migrações do banco…"
-./node_modules/.bin/prisma migrate deploy
+if [ -d prisma/migrations ]; then
+  echo "→ Aplicando migrações do banco…"
+  ./node_modules/.bin/prisma migrate deploy
+else
+  # Projeto configurado para PostgreSQL: o schema é sincronizado direto,
+  # sem arquivos de migração (veja scripts/usar-postgres.mjs).
+  echo "→ Sincronizando o schema do banco…"
+  ./node_modules/.bin/prisma db push
+fi
 
 echo "→ Verificando dados iniciais…"
 node scripts/seed-if-empty.mjs

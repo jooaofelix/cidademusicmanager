@@ -25,16 +25,10 @@ Não precisa instalar nada, não precisa de terminal e não pede cartão de cré
    `postgresql://usuario:senha@ep-alguma-coisa.neon.tech/neondb?sslmode=require`.
    **Copie e guarde** — vamos usar no passo 3.
 
-**2. Prepare o projeto para o Postgres**
+**2. Publique (Vercel)**
 
-Alguém com acesso ao código roda **uma vez**:
-
-```bash
-node scripts/usar-postgres.mjs
-git add -A && git commit -m "Muda para PostgreSQL" && git push
-```
-
-**3. Publique (Vercel)**
+> ✅ O projeto **já está configurado para PostgreSQL** — não precisa rodar nada
+> no terminal. Só seguir os passos abaixo.
 
 1. Entre em [vercel.com](https://vercel.com) e crie a conta **com o GitHub**.
 2. Clique em *Add New → Project* e escolha o repositório `cidademusicmanager`.
@@ -58,16 +52,13 @@ no primeiro deploy.
 
 ### Opção B — Railway · ~US$ 5/mês, também só pelo navegador
 
-Se preferir manter o banco em arquivo (mais simples de fazer backup), o Railway
-publica direto do GitHub sem terminal:
+Publica direto do GitHub, sem terminal:
 
 1. Entre em [railway.app](https://railway.app) com o GitHub.
 2. *New Project → Deploy from GitHub repo* → escolha o repositório.
 3. Em **Variables**, adicione `SESSION_SECRET` com um texto longo e aleatório.
-4. Em **Settings → Volumes**, crie um volume com o caminho de montagem **`/data`**.
-
-> ⚠️ **O volume em `/data` não é opcional.** É onde o banco fica guardado. Sem ele,
-> tudo que vocês cadastrarem some no próximo deploy.
+4. Em **Variables**, adicione também `DATABASE_URL` com a connection string de um
+   Postgres (o próprio Railway oferece um em *New → Database → PostgreSQL*).
 
 ---
 
@@ -94,13 +85,14 @@ A mais barata das pagas, porque o app "dorme" quando ninguém está usando.
 | | Vercel + Neon | Railway | Fly.io |
 |---|---|---|---|
 | Custo | **grátis** | ~US$ 5/mês | ~US$ 2–4/mês |
-| Precisa de terminal? | só uma vez, para trocar o banco | não | sim |
+| Precisa de terminal? | **não** | não | sim |
 | Pede cartão? | não | sim | sim |
-| Banco | Postgres (na nuvem) | arquivo no volume | arquivo no volume |
-| Backup | painel do Neon | copiar 1 arquivo | copiar 1 arquivo |
+| Banco | Postgres (na nuvem) | Postgres | Postgres |
+| Backup | painel do Neon | painel do provedor | painel do provedor |
 
-Se ninguém da equipe se sente à vontade com terminal e o objetivo é não gastar,
-vá de **Opção A**.
+O projeto vem pronto para a **Opção A**. As opções B e C usam o `Dockerfile` e também
+precisam de um banco Postgres (ou de voltar o projeto para SQLite) — se quiser uma delas,
+me chame que eu ajusto.
 
 ---
 
@@ -187,18 +179,12 @@ e nenhuma delas oferece isso de forma automática para terceiros. Por isso a aba
 distribuidora e registram o valor. Leva 2 minutos e o histórico fica todo no dashboard.
 
 **Como faço backup?**
-Depende de onde vocês publicaram:
-
-- **Neon (Opção A):** o painel do Neon já guarda o histórico e permite voltar o banco
-  para um momento anterior. Não precisa fazer nada manualmente.
-- **Railway ou Fly.io:** o banco inteiro é um arquivo só. No Fly.io:
-  ```bash
-  fly ssh console -C "cat /data/cidade.db" > backup-cidade.db
-  ```
-  Vale fazer uma vez por mês e guardar no Drive.
+O Neon já faz por vocês: o painel guarda o histórico e permite voltar o banco para um
+momento anterior (*Restore*). Não precisa fazer nada manualmente. Se quiser uma cópia
+própria, o Neon também exporta um arquivo pelo painel.
 
 **Alguém errou e apagou algo. E agora?**
-Se tiver backup, é só restaurar o arquivo. Por isso o backup mensal importa. Só quem é
+No painel do Neon dá para restaurar o banco para como ele estava antes. Só quem é
 **administrador** consegue excluir eventos e músicas — vale deixar poucas pessoas como admin.
 
 **Quero adicionar um músico novo.**
@@ -211,7 +197,7 @@ e peça para a pessoa trocar.
 
 ```bash
 npm install
-cp .env.example .env    # ajuste SESSION_SECRET
-npm run setup           # cria o banco e a equipe
+cp .env.example .env    # aponte DATABASE_URL para um Postgres e ajuste SESSION_SECRET
+npm run setup           # cria as tabelas e a equipe
 npm run dev             # abre em http://localhost:3000
 ```

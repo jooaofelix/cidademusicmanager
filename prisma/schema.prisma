@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -86,7 +86,7 @@ model Song {
   defaultKey String? // tom padrao (ex "G", "Bm")
   bpm        Int?
   timeSig    String? // 4/4, 6/8...
-  versionUrl String? // link da versao (YouTube/Spotify)
+  versionUrl String? // link da versao de referencia (YouTube/Spotify)
   vsUrl      String? // link do VS / multitrack (Google Drive)
   chartUrl   String? // cifra / partitura
   lyrics     String?
@@ -210,7 +210,7 @@ model Project {
 // Receita de streaming lancada manualmente (relatorio mensal das plataformas)
 model RoyaltyEntry {
   id          String   @id @default(cuid())
-  platform    String // YOUTUBE | SPOTIFY | APPLE_MUSIC | DEEZER | AMAZON | OUTRO
+  platform    String // SPOTIFY | APPLE_MUSIC | DEEZER | AMAZON | OUTRO
   period      String // "2026-07"
   amountCents Int      @default(0)
   streams     Int?
