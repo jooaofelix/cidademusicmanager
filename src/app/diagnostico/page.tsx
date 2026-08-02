@@ -9,8 +9,23 @@
 // se existem e o formato.
 
 import { PrismaClient } from "@prisma/client";
+import { redirect } from "next/navigation";
+import { getCurrentMember } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Há alguém logado? Nunca lança: se a verificação em si falhar — porque o
+ * banco está fora ou a chave de sessão não existe — a resposta é "não sei",
+ * tratada como "não".
+ */
+async function estaLogado(): Promise<boolean> {
+  try {
+    return (await getCurrentMember()) !== null;
+  } catch {
+    return false;
+  }
+}
 
 type Verificacao = {
   nome: string;
@@ -99,6 +114,16 @@ async function verificar(): Promise<Verificacao[]> {
 export default async function Diagnostico() {
   const checagens = await verificar();
   const tudoOk = checagens.every((c) => c.ok);
+
+  // Com tudo funcionando, esta página é só para a equipe: ela mostra o
+  // endereço do banco e não precisa ficar aberta na internet.
+  //
+  // Quando algo está quebrado, ela abre para qualquer um — de propósito. É
+  // aí que ela serve, e exigir login não faria sentido: sem banco não há
+  // como validar sessão, e quem está publicando ficaria sem diagnóstico
+  // justamente na hora do problema. Nesse estado não há dados a proteger,
+  // porque o sistema não está de pé.
+  if (tudoOk && !(await estaLogado())) redirect("/entrar");
 
   return (
     <main style={{ fontFamily: "ui-monospace, monospace", padding: "2rem", lineHeight: 1.7 }}>
