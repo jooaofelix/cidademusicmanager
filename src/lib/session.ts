@@ -8,7 +8,18 @@ const COOKIE = "cm_session";
 const MAX_AGE = 60 * 60 * 24 * 60; // 60 dias
 
 function secret() {
-  return process.env.SESSION_SECRET || "dev-secret-cidade-music";
+  const fromEnv = process.env.SESSION_SECRET;
+  if (fromEnv) return fromEnv;
+
+  // Em produção, sem chave própria qualquer um poderia forjar um cookie de
+  // sessão — melhor não subir do que subir aberto.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET não está definida. Configure uma chave aleatória longa antes de publicar."
+    );
+  }
+
+  return "dev-secret-cidade-music";
 }
 
 function sign(value: string) {

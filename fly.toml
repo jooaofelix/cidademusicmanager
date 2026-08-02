@@ -1,0 +1,25 @@
+# Deploy no Fly.io — o volume abaixo é o que mantém o banco entre os deploys.
+app = "cidade-music"
+primary_region = "gru"   # São Paulo
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  DATABASE_URL = "file:/data/cidade.db"
+
+[[mounts]]
+  source = "cidade_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

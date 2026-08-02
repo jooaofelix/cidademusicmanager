@@ -1,0 +1,19 @@
+# Deploy no Render. Atenção: disco persistente exige plano pago (Starter).
+# Sem o disco o banco é apagado a cada deploy.
+services:
+  - type: web
+    name: cidade-music
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: oregon
+    healthCheckPath: /entrar
+    envVars:
+      - key: DATABASE_URL
+        value: file:/data/cidade.db
+      - key: SESSION_SECRET
+        generateValue: true
+    disk:
+      name: cidade-data
+      mountPath: /data
+      sizeGB: 1

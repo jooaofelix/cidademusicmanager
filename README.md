@@ -58,21 +58,18 @@ Em **Modelos** vocês montam listas padrão. Já vêm três prontas: *Culto padr
 
 ## Sobre os ganhos de streaming — leia antes
 
-Vocês perguntaram se dá para puxar automaticamente o que ganham no YouTube, Spotify e
-Apple Music. A resposta honesta:
+Vocês perguntaram se dá para puxar automaticamente o que as músicas rendem nas
+plataformas. A resposta honesta:
 
 - **Spotify e Apple Music não pagam vocês diretamente.** Quem paga é a distribuidora
   (ONErpm, DistroKid, CD Baby, Believe…). O *Spotify for Artists* e o *Apple Music for
   Artists* mostram audiência, não dinheiro, e **não têm API pública de royalties**.
-- **YouTube é a exceção**: a YouTube Analytics API tem métrica de receita, mas exige canal
-  monetizado no YPP, um projeto no Google Cloud e login OAuth do dono do canal. É possível
-  automatizar depois, só não é de graça nem imediato.
 - **O número verdadeiro está no relatório mensal da distribuidora**, que já vem com todas
   as plataformas somadas.
 
 Por isso a aba **Streaming** funciona por lançamento manual: uma vez por mês vocês abrem
-o relatório da distribuidora e o YouTube Studio e registram o valor de cada plataforma.
-Leva ~2 minutos e o histórico fica todo no dashboard.
+o relatório da distribuidora e registram o valor de cada plataforma. Leva ~2 minutos e o
+histórico fica todo no dashboard.
 
 A caixinha **"já caiu na conta"** existe para separar *o que foi apurado* de *o que já foi
 recebido* — marque só quando o dinheiro entrou de fato, para o caixa não inflar.
@@ -98,10 +95,9 @@ Requisitos: Node.js 20 ou superior.
 
 ```bash
 npm install
-cp .env.example .env      # ajuste SESSION_SECRET
-npx prisma migrate deploy # cria o banco
-npm run db:seed           # cria a equipe e os modelos de checklist
-npm run dev               # http://localhost:3000
+cp .env.example .env   # ajuste SESSION_SECRET
+npm run setup          # cria o banco + a equipe e os modelos de checklist
+npm run dev            # http://localhost:3000
 ```
 
 ### Primeiro acesso
@@ -137,17 +133,39 @@ cheia, sem barra de navegador, igual a um app nativo.
 
 ## Como publicar
 
-O app é um Next.js comum com banco SQLite. Ele precisa de um **disco persistente** —
-por isso a Vercel não serve sem trocar o banco.
+> 📖 **Se você não é a pessoa técnica da equipe, use o
+> [guia passo a passo em linguagem simples](docs/COMECAR.md).**
 
-**Opção recomendada — Railway, Render ou Fly.io** (todos têm plano gratuito ou barato):
+O app roda em container. O `Dockerfile` já faz tudo: build, migrações do banco no boot e,
+se o banco estiver vazio, cadastro automático da equipe — o primeiro deploy sobe pronto
+para usar.
 
-1. Suba o repositório e conecte o serviço ao GitHub.
-2. Configure as variáveis:
-   - `DATABASE_URL` = `file:/data/cidade.db`
-   - `SESSION_SECRET` = uma chave aleatória longa
-3. Monte um **volume persistente** em `/data` (senão o banco some a cada deploy).
-4. Build: `npm run build` · Start: `npm start`
+**O único requisito não-negociável:** um **volume persistente montado em `/data`**, onde
+mora o `cidade.db`. Sem ele o banco é recriado a cada deploy e vocês perdem tudo.
+
+Configurações prontas no repositório:
+
+| Arquivo | Host | Custo aproximado |
+|---|---|---|
+| `fly.toml` | Fly.io — **recomendado** | ~US$ 2–4/mês (suspende quando ocioso) |
+| `railway.json` | Railway | ~US$ 5/mês |
+| `render.yaml` | Render | ~US$ 7/mês (disco exige plano pago) |
+
+Fly.io, do zero:
+
+```bash
+fly launch --no-deploy                            # aceite o fly.toml existente
+fly volumes create cidade_data --size 1 --region gru
+fly secrets set SESSION_SECRET="$(openssl rand -base64 32)"
+fly deploy
+```
+
+Variáveis de ambiente:
+
+| Variável | Valor |
+|---|---|
+| `DATABASE_URL` | `file:/data/cidade.db` (já é o padrão da imagem) |
+| `SESSION_SECRET` | uma chave aleatória longa — **obrigatória em produção** |
 
 **Se preferir Postgres** (Neon, Supabase, Railway Postgres), troque em `prisma/schema.prisma`:
 
@@ -158,19 +176,18 @@ datasource db {
 }
 ```
 
-e rode `npx prisma migrate dev --name init` de novo. Nada do código muda.
+Apague `prisma/migrations/`, rode `npx prisma migrate dev --name init` e aponte a
+`DATABASE_URL` para o Postgres. Nenhuma linha do código da aplicação muda.
 
 ### Backup
 
-Com SQLite, o backup é copiar um arquivo:
+Com SQLite o backup é copiar um arquivo:
 
 ```bash
-cp /data/cidade.db ~/backup-cidade-$(date +%F).db
+fly ssh console -C "cat /data/cidade.db" > backup-cidade-$(date +%F).db
 ```
 
-Vale fazer isso uma vez por mês.
-
----
+Vale fazer uma vez por mês.
 
 ## Stack
 
@@ -184,7 +201,10 @@ Vale fazer isso uma vez por mês.
 ```
 prisma/
   schema.prisma      modelo de dados
-  seed.ts            equipe + modelos de checklist + projetos de exemplo
+  seed.mjs           equipe + modelos de checklist + projetos de exemplo
+scripts/
+  start.sh           boot de produção: migra, semeia se vazio, sobe o servidor
+  seed-if-empty.mjs  só semeia no primeiro deploy; reiniciar não duplica nada
 src/
   app/(auth)/entrar  login por PIN
   app/(app)/         área logada

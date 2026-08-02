@@ -67,7 +67,6 @@ export const PAYMENT_METHODS = [
 ] as const;
 
 export const PLATFORMS = [
-  { value: "YOUTUBE", label: "YouTube" },
   { value: "SPOTIFY", label: "Spotify" },
   { value: "APPLE_MUSIC", label: "Apple Music" },
   { value: "DEEZER", label: "Deezer" },

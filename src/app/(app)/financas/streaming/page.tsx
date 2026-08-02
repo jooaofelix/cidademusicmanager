@@ -40,7 +40,7 @@ export default async function StreamingPage() {
     <>
       <PageHeader
         title="Streaming"
-        subtitle="Quanto as músicas renderam no YouTube, Spotify e Apple Music"
+        subtitle="Quanto as músicas renderam no Spotify, Apple Music e afins"
         back={{ href: "/financas" }}
       />
 
@@ -71,19 +71,14 @@ export default async function StreamingPage() {
               API pública de royalties.
             </li>
             <li>
-              <strong className="text-slate-300">YouTube</strong> é o único com API de receita
-              (YouTube Analytics API), mas exige canal monetizado no YPP, projeto no Google Cloud
-              e login OAuth do dono do canal. É viável, só não é automático de graça.
-            </li>
-            <li>
               <strong className="text-slate-300">O número verdadeiro</strong> está no relatório
               mensal da distribuidora — ele já vem com todas as plataformas somadas.
             </li>
           </ul>
           <p className="rounded-xl border border-brand-900/60 bg-brand-950/30 px-3 py-2.5 text-xs text-brand-200">
             <strong>Como usar na prática:</strong> uma vez por mês, abra o relatório da
-            distribuidora e o YouTube Studio, e lance aqui o valor de cada plataforma. Leva 2
-            minutos e o histórico fica todo no dashboard.
+            distribuidora e lance aqui o valor de cada plataforma. Leva 2 minutos e o
+            histórico fica todo no dashboard.
           </p>
         </div>
       </details>
