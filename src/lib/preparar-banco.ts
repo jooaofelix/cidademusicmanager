@@ -14,6 +14,7 @@
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { SCHEMA_SQL } from "./schema-gerado";
 import { semear } from "./dados-iniciais";
+import { comRetentativa } from "./retentativa";
 
 // Número arbitrário, só precisa ser o mesmo em todas as instâncias: é o nome
 // da trava. Qualquer outro sistema no mesmo banco usaria um número diferente.
@@ -38,28 +39,32 @@ async function executar(): Promise<void> {
   const cliente = new PrismaClient();
 
   try {
-    await cliente.$transaction(
-      async (tx) => {
-        // Só uma instância passa daqui por vez; as outras ficam esperando e,
-        // quando entram, já encontram tudo pronto e não fazem nada. A trava
-        // é liberada sozinha no fim da transação, inclusive se algo falhar.
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TRAVA_PREPARO})`;
+    // A primeira consulta da instância é justamente a que encontra o banco
+    // hibernando, então esta é a que mais precisa aguentar a espera.
+    await comRetentativa(() =>
+      cliente.$transaction(
+        async (tx) => {
+          // Só uma instância passa daqui por vez; as outras ficam esperando e,
+          // quando entram, já encontram tudo pronto e não fazem nada. A trava
+          // é liberada sozinha no fim da transação, inclusive se algo falhar.
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TRAVA_PREPARO})`;
 
-        if (!(await temTabelas(tx))) {
-          console.log("[preparar-banco] Banco vazio — criando as tabelas…");
-          await aplicarSchema(tx);
-          console.log("[preparar-banco] Tabelas criadas.");
-        }
+          if (!(await temTabelas(tx))) {
+            console.log("[preparar-banco] Banco vazio — criando as tabelas…");
+            await aplicarSchema(tx);
+            console.log("[preparar-banco] Tabelas criadas.");
+          }
 
-        if ((await tx.member.count()) === 0) {
-          console.log("[preparar-banco] Cadastrando a equipe inicial…");
-          const { integrantes, modelos } = await semear(tx);
-          console.log(`[preparar-banco] ${integrantes} integrantes, ${modelos} modelos.`);
-        }
-      },
-      // O padrão do Prisma é 5s, curto demais para criar 12 tabelas num banco
-      // que talvez esteja acordando do repouso — e para quem espera a trava.
-      { timeout: 60_000, maxWait: 60_000 },
+          if ((await tx.member.count()) === 0) {
+            console.log("[preparar-banco] Cadastrando a equipe inicial…");
+            const { integrantes, modelos } = await semear(tx);
+            console.log(`[preparar-banco] ${integrantes} integrantes, ${modelos} modelos.`);
+          }
+        },
+        // O padrão do Prisma é 5s, curto demais para criar 12 tabelas num banco
+        // que talvez esteja acordando do repouso — e para quem espera a trava.
+        { timeout: 60_000, maxWait: 60_000 },
+      ),
     );
   } finally {
     await cliente.$disconnect();
