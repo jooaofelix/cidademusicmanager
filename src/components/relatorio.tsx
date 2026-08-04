@@ -34,30 +34,29 @@ export function Numerao({
 
 /** Título de seção do relatório, com a explicação do que ali se mede. */
 export function Secao({
-  numero,
   titulo,
-  resumo,
+  frase,
   children,
 }: {
-  numero: number;
   titulo: string;
-  resumo: string;
+  /** A conclusão em uma frase. Quem só ler isto já entendeu a seção. */
+  frase: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="quebra-antes mb-8">
-      <header className="mb-3 border-b border-ink-700 pb-2">
-        <div className="flex items-baseline gap-2">
-          <span className="text-xs font-bold tabular-nums text-brand-500">
-            {String(numero).padStart(2, "0")}
-          </span>
-          <h2 className="text-lg font-bold text-slate-100">{titulo}</h2>
-        </div>
-        <p className="mt-0.5 text-xs text-slate-500">{resumo}</p>
-      </header>
+    <section className="quebra-antes mb-9">
+      <h2 className="mb-2 text-xl font-bold text-slate-100">{titulo}</h2>
+      <p className="mb-4 border-l-2 border-brand-500 pl-3 text-base leading-relaxed text-slate-300">
+        {frase}
+      </p>
       {children}
     </section>
   );
+}
+
+/** Destaca um número dentro da frase de abertura, sem quebrar a leitura. */
+export function N({ children }: { children: ReactNode }) {
+  return <strong className="font-bold text-slate-100">{children}</strong>;
 }
 
 /**

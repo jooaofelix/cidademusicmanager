@@ -1,7 +1,13 @@
+// O valor gravado no banco nunca muda depois de existir — "EVENTO" segue
+// sendo o evento em outra igreja, só ganhou um rótulo mais claro. Renomear o
+// valor exigiria migrar os eventos já cadastrados sem ganho nenhum.
 export const EVENT_TYPES = [
   { value: "CULTO", label: "Culto" },
   { value: "ENSAIO", label: "Ensaio" },
-  { value: "EVENTO", label: "Evento externo" },
+  { value: "INTERNO", label: "Evento interno (nossa igreja)" },
+  { value: "REDE", label: "Rede de igrejas da cidade" },
+  { value: "EVENTO", label: "Evento externo (outra igreja)" },
+  { value: "RUA", label: "Ação de rua" },
   { value: "GRAVACAO", label: "Gravação" },
   { value: "OUTRO", label: "Outro" },
 ] as const;

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { requireReporter } from "@/lib/session";
 import { PageHeader } from "@/components/ui";
 import { MonthlyChart } from "@/components/MonthlyChart";
-import { Barras, Medidor, Numerao, Secao, Tabela } from "@/components/relatorio";
+import { Barras, N, Numerao, Secao, Tabela } from "@/components/relatorio";
 import { BotaoImprimir } from "./BotaoImprimir";
 import { brl, fmtDate, fmtDateLong } from "@/lib/format";
 import {
@@ -17,7 +17,6 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   PLATFORMS,
-  TASK_CATEGORIES,
   labelOf,
 } from "@/lib/constants";
 import {
@@ -64,19 +63,20 @@ export default async function RelatoriosPage({
 
   // Cada área só é consultada se foi pedida — relatório curto não paga pelo
   // custo de um relatório completo.
+  // Preparação entra junto de Equipe, e Projetos junto de Dinheiro: são
+  // assuntos que ninguém apresenta separados.
   const [agenda, equipe, repertorio, organizacao, financas, projetos, streaming] =
     await Promise.all([
       tem("agenda") ? apurarAgenda(de, ate) : null,
       tem("equipe") ? apurarEquipe(de, ate) : null,
       tem("repertorio") ? apurarRepertorio(de, ate) : null,
-      tem("organizacao") ? apurarOrganizacao(de, ate) : null,
+      tem("equipe") ? apurarOrganizacao(de, ate) : null,
       tem("financas") ? apurarFinancas(de, ate) : null,
-      tem("projetos") ? apurarProjetos() : null,
+      tem("financas") ? apurarProjetos() : null,
       tem("streaming") ? apurarStreaming(de, ate) : null,
     ]);
 
-  let numeroDaSecao = 0;
-  const proxima = () => (numeroDaSecao += 1);
+  const plural = (n: number, um: string, muitos: string) => (n === 1 ? um : muitos);
 
   return (
     <>
@@ -173,30 +173,36 @@ export default async function RelatoriosPage({
 
         {agenda && (
           <Secao
-            numero={proxima()}
-            titulo="Agenda e eventos"
-            resumo="Tudo que a equipe serviu no período, por tipo de compromisso."
+            titulo="Onde servimos"
+            frase={
+              <>
+                No período a equipe serviu em <N>{agenda.realizados}</N>{" "}
+                {plural(agenda.realizados, "ocasião", "ocasiões")}
+                {agenda.proximos > 0 && (
+                  <>
+                    , e há <N>{agenda.proximos}</N>{" "}
+                    {plural(agenda.proximos, "compromisso já marcado", "compromissos já marcados")}{" "}
+                    pela frente
+                  </>
+                )}
+                .
+              </>
+            }
           >
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              <Numerao valor={String(agenda.total)} rotulo="Compromissos" />
-              <Numerao valor={String(agenda.realizados)} rotulo="Realizados" />
-              <Numerao valor={String(agenda.proximos)} rotulo="Agendados" />
-            </div>
-
-            <h3 className="section-title mb-2">Por tipo</h3>
+            <h3 className="section-title mb-2">Por tipo de compromisso</h3>
             <Barras
               itens={agenda.porTipo.map((t) => ({
                 rotulo: labelOf(EVENT_TYPES, t.rotulo),
                 valor: t.quantidade,
               }))}
-              formatar={(n) => `${n}×`}
+              formatar={(n) => `${n} ${plural(n, "vez", "vezes")}`}
             />
 
             {agenda.ultimos.length > 0 && (
               <>
-                <h3 className="section-title mb-2 mt-5">Compromissos mais recentes</h3>
+                <h3 className="section-title mb-2 mt-5">Os mais recentes</h3>
                 <Tabela
-                  colunas={["Evento", "Data", "Músicas"]}
+                  colunas={["Compromisso", "Data", "Músicas"]}
                   linhas={agenda.ultimos.map((e) => [
                     e.title,
                     fmtDate(e.date),
@@ -210,107 +216,77 @@ export default async function RelatoriosPage({
 
         {equipe && (
           <Secao
-            numero={proxima()}
-            titulo="Equipe e participação"
-            resumo="Quantas vezes cada integrante serviu, e como a equipe respondeu às escalas."
+            titulo="Nossa equipe"
+            frase={
+              <>
+                <N>{equipe.integrantesAtivos}</N> integrantes ativos somaram{" "}
+                <N>{equipe.participacoes}</N>{" "}
+                {plural(equipe.participacoes, "participação", "participações")}
+                {equipe.participacoes > 0 && (
+                  <>
+                    , com <N>{equipe.taxaConfirmacao.toFixed(0)}%</N> de confirmação nas escalas
+                  </>
+                )}
+                {organizacao && organizacao.total > 0 && (
+                  <>
+                    . Das <N>{organizacao.total}</N> tarefas de preparação,{" "}
+                    <N>{organizacao.concluidas}</N> {plural(organizacao.concluidas, "foi concluída", "foram concluídas")}
+                  </>
+                )}
+                .
+              </>
+            }
           >
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <Numerao
-                valor={String(equipe.participacoes)}
-                rotulo="Participações"
-                nota={`${equipe.integrantesAtivos} integrantes ativos`}
-              />
-              <Medidor
-                percentual={equipe.taxaConfirmacao}
-                rotulo="Confirmação"
-                detalhe="Escalas respondidas com confirmação"
-              />
-            </div>
-
-            <h3 className="section-title mb-2">Participação por integrante</h3>
+            <h3 className="section-title mb-2">Quantas vezes cada um serviu</h3>
             <Barras
               itens={equipe.porIntegrante.map((m) => ({
                 rotulo: m.nome,
                 valor: m.escalas,
-                nota: `${m.instrumento} · ${m.confirmadas} confirmada(s)`,
+                nota: m.instrumento,
               }))}
-              formatar={(n) => `${n}×`}
+              formatar={(n) => `${n} ${plural(n, "vez", "vezes")}`}
             />
           </Secao>
         )}
 
         {repertorio && (
           <Secao
-            numero={proxima()}
-            titulo="Repertório"
-            resumo="O que foi ministrado e o tamanho do acervo disponível à equipe."
+            titulo="Músicas"
+            frase={
+              <>
+                Foram ministradas <N>{repertorio.distintasNoPeriodo}</N>{" "}
+                {plural(repertorio.distintasNoPeriodo, "música diferente", "músicas diferentes")},
+                de um repertório de <N>{repertorio.acervo}</N> cadastradas.
+              </>
+            }
           >
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              <Numerao valor={String(repertorio.acervo)} rotulo="No acervo" />
-              <Numerao valor={String(repertorio.distintasNoPeriodo)} rotulo="Ministradas" />
-              <Numerao valor={String(repertorio.execucoes)} rotulo="Execuções" />
-            </div>
-
-            <h3 className="section-title mb-2">Mais ministradas</h3>
+            <h3 className="section-title mb-2">As mais ministradas</h3>
             <Barras
               itens={repertorio.maisTocadas.map((m) => ({
                 rotulo: m.titulo,
                 valor: m.vezes,
                 nota: [m.artista, m.tom && `tom ${m.tom}`].filter(Boolean).join(" · "),
               }))}
-              formatar={(n) => `${n}×`}
-            />
-          </Secao>
-        )}
-
-        {organizacao && (
-          <Secao
-            numero={proxima()}
-            titulo="Organização"
-            resumo="Demandas planejadas antes de cada compromisso e quanto foi concluído."
-          >
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <Numerao
-                valor={`${organizacao.concluidas}/${organizacao.total}`}
-                rotulo="Demandas"
-                nota="Concluídas sobre o total planejado"
-              />
-              <Medidor
-                percentual={organizacao.taxa}
-                rotulo="Conclusão"
-                detalhe="Do que foi planejado, o que saiu do papel"
-              />
-            </div>
-
-            <h3 className="section-title mb-2">Por frente de trabalho</h3>
-            <Barras
-              itens={organizacao.porCategoria.map((c) => ({
-                rotulo: labelOf(TASK_CATEGORIES, c.rotulo),
-                valor: c.total,
-                nota: `${c.concluidas} concluída(s)`,
-              }))}
-              formatar={(n) => `${n}`}
+              formatar={(n) => `${n} ${plural(n, "vez", "vezes")}`}
             />
           </Secao>
         )}
 
         {financas && (
           <Secao
-            numero={proxima()}
-            titulo="Finanças"
-            resumo="De onde veio o recurso, para onde foi, e o que restou em caixa."
+            titulo="Dinheiro"
+            frase={
+              <>
+                Entrou <N>{brl(financas.entradas)}</N> e saiu <N>{brl(financas.saidas)}</N>
+                {", "}
+                {financas.saldo >= 0 ? "sobrando" : "faltando"}{" "}
+                <N>{brl(Math.abs(financas.saldo))}</N> no período.
+              </>
+            }
           >
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <Numerao valor={brl(financas.entradas)} rotulo="Entradas" tom="positivo" />
-              <Numerao valor={brl(financas.saidas)} rotulo="Saídas" tom="negativo" />
-              <div className="col-span-2">
-                <Numerao
-                  valor={brl(financas.saldo)}
-                  rotulo="Saldo do período"
-                  nota="O que sobrou depois de todas as saídas"
-                  tom={financas.saldo >= 0 ? "positivo" : "negativo"}
-                />
-              </div>
+            <div className="mb-5 grid grid-cols-2 gap-2">
+              <Numerao valor={brl(financas.entradas)} rotulo="Entrou" tom="positivo" />
+              <Numerao valor={brl(financas.saidas)} rotulo="Saiu" tom="negativo" />
             </div>
 
             <h3 className="section-title mb-2">Mês a mês</h3>
@@ -318,93 +294,65 @@ export default async function RelatoriosPage({
               <MonthlyChart data={financas.porMes} />
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <h3 className="section-title mb-2">De onde veio</h3>
-                <Barras
-                  itens={financas.entradasPorCategoria.map((c) => ({
-                    rotulo: labelOf(INCOME_CATEGORIES, c.rotulo),
-                    valor: c.valor,
-                  }))}
-                  formatar={brl}
-                  tom="verde"
-                />
-              </div>
-              <div>
-                <h3 className="section-title mb-2">Para onde foi</h3>
-                <Barras
-                  itens={financas.saidasPorCategoria.map((c) => ({
-                    rotulo: labelOf(EXPENSE_CATEGORIES, c.rotulo),
-                    valor: c.valor,
-                  }))}
-                  formatar={brl}
-                  tom="vermelho"
-                />
-              </div>
-            </div>
+            <h3 className="section-title mb-2">De onde veio</h3>
+            <Barras
+              itens={financas.entradasPorCategoria.map((c) => ({
+                rotulo: labelOf(INCOME_CATEGORIES, c.rotulo),
+                valor: c.valor,
+              }))}
+              formatar={brl}
+              tom="verde"
+            />
 
-            <p className="mt-3 text-xs text-slate-500">
-              {financas.lancamentos} lançamento(s) registrados no período.
-            </p>
-          </Secao>
-        )}
+            <h3 className="section-title mb-2 mt-5">Para onde foi</h3>
+            <Barras
+              itens={financas.saidasPorCategoria.map((c) => ({
+                rotulo: labelOf(EXPENSE_CATEGORIES, c.rotulo),
+                valor: c.valor,
+              }))}
+              formatar={brl}
+              tom="vermelho"
+            />
 
-        {projetos && (
-          <Secao
-            numero={proxima()}
-            titulo="Projetos"
-            resumo="Metas que a equipe está construindo e o quanto já foi alcançado."
-          >
-            {projetos.projetos.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-ink-600 px-4 py-6 text-center text-sm text-slate-500">
-                Nenhum projeto cadastrado.
-              </p>
-            ) : (
-              <ul className="space-y-4">
-                {projetos.projetos.map((p) => {
-                  const pct = p.meta > 0 ? (p.arrecadado / p.meta) * 100 : 0;
-                  return (
-                    <li key={p.nome} className="card">
-                      <div className="mb-1 flex items-baseline justify-between gap-3">
-                        <h3 className="text-sm font-semibold text-slate-100">{p.nome}</h3>
-                        <span className="shrink-0 text-sm font-bold tabular-nums text-slate-100">
-                          {pct.toFixed(0)}%
-                        </span>
-                      </div>
-                      {p.descricao && (
-                        <p className="mb-2 text-xs text-slate-500">{p.descricao}</p>
-                      )}
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-ink-800">
-                        <div
-                          className="h-full rounded-full bg-brand-500"
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                      </div>
-                      <p className="mt-1.5 text-xs tabular-nums text-slate-400">
-                        {brl(p.arrecadado)} de {brl(p.meta)}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
+            {projetos && projetos.projetos.length > 0 && (
+              <>
+                <h3 className="section-title mb-2 mt-6">Os projetos da banda</h3>
+                <ul className="space-y-3">
+                  {projetos.projetos.map((p) => {
+                    const pct = p.meta > 0 ? (p.arrecadado / p.meta) * 100 : 0;
+                    return (
+                      <li key={p.nome} className="card">
+                        <h4 className="text-sm font-semibold text-slate-100">{p.nome}</h4>
+                        <p className="mb-2 mt-0.5 text-sm text-slate-400">
+                          Já temos <strong className="text-slate-200">{brl(p.arrecadado)}</strong>{" "}
+                          dos {brl(p.meta)} necessários.
+                        </p>
+                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-ink-800">
+                          <div
+                            className="h-full rounded-full bg-brand-500"
+                            style={{ width: `${Math.min(pct, 100)}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
             )}
           </Secao>
         )}
 
         {streaming && (
           <Secao
-            numero={proxima()}
             titulo="Streaming"
-            resumo="Alcance das músicas nas plataformas e o repasse recebido."
+            frase={
+              <>
+                As músicas foram ouvidas <N>{streaming.streams.toLocaleString("pt-BR")}</N>{" "}
+                {plural(streaming.streams, "vez", "vezes")} nas plataformas, rendendo{" "}
+                <N>{brl(streaming.total)}</N>.
+              </>
+            }
           >
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <Numerao valor={brl(streaming.total)} rotulo="Repasses" />
-              <Numerao
-                valor={streaming.streams.toLocaleString("pt-BR")}
-                rotulo="Reproduções"
-              />
-            </div>
-
             <h3 className="section-title mb-2">Por plataforma</h3>
             <Barras
               itens={streaming.porPlataforma.map((p) => ({

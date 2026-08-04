@@ -6,46 +6,16 @@
 import { db } from "./db";
 
 export const AREAS = [
-  {
-    id: "agenda",
-    titulo: "Agenda e eventos",
-    resumo: "Cultos, ensaios e eventos realizados no período",
-  },
-  {
-    id: "equipe",
-    titulo: "Equipe e participação",
-    resumo: "Quem serviu, quantas vezes, e a resposta às escalas",
-  },
-  {
-    id: "repertorio",
-    titulo: "Repertório",
-    resumo: "Músicas mais ministradas e tamanho do acervo",
-  },
-  {
-    id: "organizacao",
-    titulo: "Organização",
-    resumo: "Demandas planejadas e concluídas antes de cada evento",
-  },
-  {
-    id: "financas",
-    titulo: "Finanças",
-    resumo: "Entradas, saídas, saldo e para onde o recurso foi",
-  },
-  {
-    id: "projetos",
-    titulo: "Projetos",
-    resumo: "Metas de arrecadação e quanto já foi alcançado",
-  },
-  {
-    id: "streaming",
-    titulo: "Streaming",
-    resumo: "Alcance nas plataformas e repasses recebidos",
-  },
+  { id: "agenda", titulo: "Onde servimos", resumo: "Cultos, eventos e ações no período" },
+  { id: "equipe", titulo: "Nossa equipe", resumo: "Quem serviu e como a equipe se preparou" },
+  { id: "repertorio", titulo: "Músicas", resumo: "O que foi ministrado e o repertório disponível" },
+  { id: "financas", titulo: "Dinheiro", resumo: "Entradas, saídas e os projetos da banda" },
+  { id: "streaming", titulo: "Streaming", resumo: "Quanto as músicas foram ouvidas" },
 ] as const;
 
 export type AreaId = (typeof AREAS)[number]["id"];
 
-export const AREAS_PADRAO: AreaId[] = ["agenda", "equipe", "repertorio", "financas", "projetos"];
+export const AREAS_PADRAO: AreaId[] = ["agenda", "equipe", "repertorio", "financas"];
 
 export function ehArea(valor: string): valor is AreaId {
   return AREAS.some((a) => a.id === valor);
