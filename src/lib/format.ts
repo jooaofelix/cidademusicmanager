@@ -90,3 +90,45 @@ export function relativeDay(d: Date | string) {
   if (diff > 0) return `em ${diff} dias`;
   return `há ${Math.abs(diff)} dias`;
 }
+
+/**
+ * A data de um compromisso, que pode passar de um dia.
+ *
+ * Um dia só: "sábado, 8 de agosto de 2026".
+ * Dois ou mais: "8 a 9 de agosto de 2026" — e, virando o mês,
+ * "30 de agosto a 1 de setembro de 2026".
+ */
+export function fmtPeriodoEvento(inicio: Date | string, fim?: Date | string | null) {
+  const a = new Date(inicio);
+  if (!fim) return fmtDateLong(a);
+
+  const b = new Date(fim);
+  if (a.toDateString() === b.toDateString()) return fmtDateLong(a);
+
+  const mesmoMes = a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+  const dia = (d: Date) => d.toLocaleDateString("pt-BR", { day: "numeric", timeZone: "UTC" });
+  const diaMes = (d: Date) =>
+    d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "UTC" });
+  const completo = (d: Date) =>
+    d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
+  return mesmoMes ? `${dia(a)} a ${completo(b)}` : `${diaMes(a)} a ${completo(b)}`;
+}
+
+/** Versão curta, para listas: "8 a 9/08" ou só "08/08". */
+export function fmtPeriodoCurto(inicio: Date | string, fim?: Date | string | null) {
+  const a = new Date(inicio);
+  if (!fim) return fmtDate(a);
+  const b = new Date(fim);
+  if (a.toDateString() === b.toDateString()) return fmtDate(a);
+  return `${fmtDate(a)} a ${fmtDate(b)}`;
+}
+
+/** Quantos dias o compromisso ocupa, contando início e fim. */
+export function diasDoEvento(inicio: Date | string, fim?: Date | string | null): number {
+  if (!fim) return 1;
+  const a = new Date(inicio);
+  const b = new Date(fim);
+  const dias = Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1;
+  return Math.max(dias, 1);
+}

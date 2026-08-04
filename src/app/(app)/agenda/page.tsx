@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentMember } from "@/lib/session";
 import { PageHeader, EmptyState, Chip } from "@/components/ui";
-import { fmtDateLong, relativeDay } from "@/lib/format";
+import { diasDoEvento, fmtPeriodoEvento, relativeDay } from "@/lib/format";
 import { EVENT_TYPES, labelOf } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,6 @@ export default async function AgendaPage({
     orderBy: { date: showPast ? "desc" : "asc" },
     take: showPast ? 40 : undefined,
     include: {
-      lineups: { select: { status: true, memberId: true } },
       _count: { select: { setlist: true, tasks: true } },
       tasks: { where: { done: false }, select: { id: true } },
     },
@@ -83,10 +82,8 @@ export default async function AgendaPage({
       ) : (
         <ul className="space-y-3">
           {events.map((e) => {
-            const confirmed = e.lineups.filter((l) => l.status === "CONFIRMADO").length;
-            const declined = e.lineups.filter((l) => l.status === "RECUSADO").length;
-            const myLineup = e.lineups.find((l) => l.memberId === me?.id);
             const openTasks = e.tasks.length;
+            const dias = diasDoEvento(e.date, e.endDate);
 
             return (
               <li key={e.id}>
@@ -98,11 +95,10 @@ export default async function AgendaPage({
                           {labelOf(EVENT_TYPES, e.type)}
                         </Chip>
                         {e.status === "CANCELADO" && <Chip tone="red">Cancelado</Chip>}
-                        {myLineup?.status === "PENDENTE" && <Chip tone="amber">Falta seu OK</Chip>}
                       </div>
                       <h2 className="truncate text-base font-semibold">{e.title}</h2>
                       <p className="mt-0.5 text-sm text-slate-400">
-                        {fmtDateLong(e.date)}
+                        {fmtPeriodoEvento(e.date, e.endDate)}
                         {e.startTime ? ` · ${e.startTime}` : ""}
                       </p>
                       {e.location && (
@@ -115,10 +111,11 @@ export default async function AgendaPage({
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-3 border-t border-ink-700 pt-3 text-xs text-slate-400">
-                    <span>
-                      <strong className="text-slate-200">{confirmed}</strong>/{e.lineups.length} confirmados
-                    </span>
-                    {declined > 0 && <span className="text-red-400">{declined} recusaram</span>}
+                    {dias > 1 && (
+                      <span>
+                        <strong className="text-slate-200">{dias}</strong> dias
+                      </span>
+                    )}
                     <span>
                       <strong className="text-slate-200">{e._count.setlist}</strong> músicas
                     </span>

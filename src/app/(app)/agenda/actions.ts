@@ -6,6 +6,21 @@ import { db } from "@/lib/db";
 import { requireMember } from "@/lib/session";
 import { fromInputDate, parseMoneyToCents } from "@/lib/format";
 
+/**
+ * A data de término de um compromisso de mais de um dia.
+ *
+ * Vazia quando começa e acaba no mesmo dia. Um término anterior ao início é
+ * descartado em vez de gravado: seria um período impossível, e todo cálculo
+ * de duração passaria a mentir.
+ */
+function dataFinal(fd: FormData, inicio: Date): Date | null {
+  const bruto = str(fd, "endDate");
+  if (!bruto) return null;
+
+  const fim = fromInputDate(bruto);
+  return fim >= inicio ? fim : null;
+}
+
 function str(fd: FormData, key: string) {
   const v = fd.get(key);
   const s = v === null ? "" : String(v).trim();
@@ -21,11 +36,14 @@ export async function createEvent(formData: FormData) {
   const dateRaw = str(formData, "date");
   if (!title || !dateRaw) return;
 
+  const inicio = fromInputDate(dateRaw);
+
   const event = await db.event.create({
     data: {
       title,
       type: str(formData, "type") ?? "CULTO",
-      date: fromInputDate(dateRaw),
+      date: inicio,
+      endDate: dataFinal(formData, inicio),
       callTime: str(formData, "callTime"),
       startTime: str(formData, "startTime"),
       location: str(formData, "location"),
@@ -51,13 +69,16 @@ export async function updateEvent(formData: FormData) {
   const dateRaw = str(formData, "date");
   if (!id || !title || !dateRaw) return;
 
+  const inicioEditado = fromInputDate(dateRaw);
+
   await db.event.update({
     where: { id },
     data: {
       title,
       type: str(formData, "type") ?? "CULTO",
       status: str(formData, "status") ?? "PLANEJADO",
-      date: fromInputDate(dateRaw),
+      date: inicioEditado,
+      endDate: dataFinal(formData, inicioEditado),
       callTime: str(formData, "callTime"),
       startTime: str(formData, "startTime"),
       location: str(formData, "location"),
@@ -93,53 +114,7 @@ export async function deleteEvent(formData: FormData) {
 
 // ---------------------------------------------------------------- escala
 
-export async function addToLineup(formData: FormData) {
-  await requireMember();
-
-  const eventId = String(formData.get("eventId"));
-  const memberId = String(formData.get("memberId"));
-  const instrument = String(formData.get("instrument") || "").trim();
-  if (!eventId || !memberId || !instrument) return;
-
-  await db.lineup.upsert({
-    where: { eventId_memberId_instrument: { eventId, memberId, instrument } },
-    create: { eventId, memberId, instrument },
-    update: {},
-  });
-
-  revalidatePath(`/agenda/${eventId}`);
-}
-
-export async function removeFromLineup(formData: FormData) {
-  await requireMember();
-  const id = String(formData.get("id"));
-  const eventId = String(formData.get("eventId"));
-
-  await db.lineup.delete({ where: { id } });
-  revalidatePath(`/agenda/${eventId}`);
-}
-
 /** Cada músico dá o próprio OK — ninguém confirma pelo outro (exceto admin). */
-export async function respondLineup(formData: FormData) {
-  const me = await requireMember();
-
-  const id = String(formData.get("id"));
-  const status = String(formData.get("status"));
-  const note = String(formData.get("note") || "").trim() || null;
-
-  const lineup = await db.lineup.findUnique({ where: { id } });
-  if (!lineup) return;
-  if (lineup.memberId !== me.id && !me.isAdmin) return;
-
-  await db.lineup.update({
-    where: { id },
-    data: { status, note, respondedAt: new Date() },
-  });
-
-  revalidatePath(`/agenda/${lineup.eventId}`);
-  revalidatePath("/");
-}
-
 // ---------------------------------------------------------------- ordem de culto
 
 export async function addSetlistItem(formData: FormData) {

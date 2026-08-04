@@ -24,7 +24,7 @@ export default async function EquipePage() {
   const members = await db.member.findMany({
     orderBy: [{ active: "desc" }, { name: "asc" }],
     include: {
-      _count: { select: { lineups: true, tasks: true } },
+      _count: { select: { tasks: true } },
     },
   });
 
@@ -53,7 +53,6 @@ export default async function EquipePage() {
                     {m.isTreasurer && <Chip tone="green">Finanças</Chip>}
                     {m.isReporter && <Chip tone="purple">Relatório</Chip>}
                     {!m.active && <Chip tone="red">Inativo</Chip>}
-                    <Chip>{m._count.lineups} escalas</Chip>
                     {m._count.tasks > 0 && <Chip tone="amber">{m._count.tasks} demandas</Chip>}
                   </div>
                 </div>

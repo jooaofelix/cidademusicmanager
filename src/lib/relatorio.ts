@@ -6,8 +6,7 @@
 import { db } from "./db";
 
 export const AREAS = [
-  { id: "agenda", titulo: "Onde servimos", resumo: "Cultos, eventos e ações no período" },
-  { id: "equipe", titulo: "Nossa equipe", resumo: "Quem serviu e como a equipe se preparou" },
+  { id: "agenda", titulo: "Onde servimos", resumo: "Cultos, eventos e ações, e a preparação de cada um" },
   { id: "repertorio", titulo: "Músicas", resumo: "O que foi ministrado e o repertório disponível" },
   { id: "financas", titulo: "Dinheiro", resumo: "Entradas, saídas e os projetos da banda" },
   { id: "streaming", titulo: "Streaming", resumo: "Quanto as músicas foram ouvidas" },
@@ -15,17 +14,21 @@ export const AREAS = [
 
 export type AreaId = (typeof AREAS)[number]["id"];
 
-export const AREAS_PADRAO: AreaId[] = ["agenda", "equipe", "repertorio", "financas"];
+export const AREAS_PADRAO: AreaId[] = ["agenda", "repertorio", "financas"];
 
 export function ehArea(valor: string): valor is AreaId {
   return AREAS.some((a) => a.id === valor);
 }
 
 export const PERIODOS = [
-  { id: "30d", rotulo: "Últimos 30 dias", dias: 30 },
-  { id: "90d", rotulo: "Últimos 3 meses", dias: 90 },
-  { id: "180d", rotulo: "Últimos 6 meses", dias: 180 },
-  { id: "365d", rotulo: "Últimos 12 meses", dias: 365 },
+  { id: "30d", rotulo: "Últimos 30 dias", dias: -30 },
+  { id: "90d", rotulo: "Últimos 3 meses", dias: -90 },
+  { id: "180d", rotulo: "Últimos 6 meses", dias: -180 },
+  { id: "365d", rotulo: "Últimos 12 meses", dias: -365 },
+  { id: "p90d", rotulo: "Próximos 3 meses", dias: 90 },
+  { id: "p180d", rotulo: "Próximos 6 meses", dias: 180 },
+  { id: "p365d", rotulo: "Próximos 12 meses", dias: 365 },
+  { id: "tudo", rotulo: "Tudo — passado e futuro", dias: 0 },
 ] as const;
 
 export type PeriodoId = (typeof PERIODOS)[number]["id"];
@@ -36,11 +39,41 @@ export function ehPeriodo(valor: string): valor is PeriodoId {
 
 export function intervaloDe(periodo: PeriodoId): { de: Date; ate: Date; rotulo: string } {
   const def = PERIODOS.find((p) => p.id === periodo) ?? PERIODOS[1];
-  const ate = new Date();
-  const de = new Date(ate);
-  de.setDate(de.getDate() - def.dias);
+  const hoje = new Date();
+
+  // "Tudo" precisa alcançar o que já foi cadastrado e o que ainda vai ser:
+  // dez anos para cada lado cobrem a vida do ministério com folga.
+  if (def.dias === 0) {
+    const de = new Date(hoje);
+    de.setFullYear(de.getFullYear() - 10);
+    const ate = new Date(hoje);
+    ate.setFullYear(ate.getFullYear() + 10);
+    return { de, ate, rotulo: def.rotulo };
+  }
+
+  const outro = new Date(hoje);
+  outro.setDate(outro.getDate() + def.dias);
+
+  const [de, ate] = def.dias < 0 ? [outro, hoje] : [hoje, outro];
   de.setHours(0, 0, 0, 0);
+  ate.setHours(23, 59, 59, 999);
+
   return { de, ate, rotulo: def.rotulo };
+}
+
+/**
+ * Um compromisso pertence ao período se encostar nele em algum momento — uma
+ * viagem que sai dia 30 e volta dia 2 conta no mês que começa, e não só no
+ * que termina. Sem data de término, vale o dia de início.
+ */
+function naJanela(de: Date, ate: Date) {
+  return {
+    OR: [
+      { date: { gte: de, lte: ate } },
+      { endDate: { gte: de, lte: ate } },
+      { AND: [{ date: { lte: de } }, { endDate: { gte: ate } }] },
+    ],
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -50,19 +83,18 @@ export type DadosAgenda = {
   porTipo: { rotulo: string; quantidade: number }[];
   realizados: number;
   proximos: number;
-  ultimos: { id: string; title: string; date: Date; type: string; musicas: number }[];
+  ultimos: { id: string; title: string; date: Date; endDate: Date | null; type: string; musicas: number }[];
 };
 
 export async function apurarAgenda(de: Date, ate: Date): Promise<DadosAgenda> {
   const eventos = await db.event.findMany({
-    where: { date: { gte: de, lte: ate }, status: { not: "CANCELADO" } },
+    where: { ...naJanela(de, ate), status: { not: "CANCELADO" } },
     orderBy: { date: "desc" },
     include: { _count: { select: { setlist: true } } },
   });
 
-  // O que vem pela frente não cabe no período apurado, que termina hoje — mas
-  // numa apresentação interessa mostrar que a agenda segue cheia. Por isso os
-  // próximos compromissos são contados fora da janela.
+  // Contados fora da janela: mesmo num relatório do passado interessa mostrar
+  // que a agenda segue cheia.
   const agendados = await db.event.count({
     where: { date: { gt: new Date() }, status: { not: "CANCELADO" } },
   });
@@ -83,48 +115,10 @@ export async function apurarAgenda(de: Date, ate: Date): Promise<DadosAgenda> {
       id: e.id,
       title: e.title,
       date: e.date,
+      endDate: e.endDate,
       type: e.type,
       musicas: e._count.setlist,
     })),
-  };
-}
-
-// ---------------------------------------------------------------------------
-
-export type DadosEquipe = {
-  integrantesAtivos: number;
-  participacoes: number;
-  taxaConfirmacao: number;
-  porIntegrante: { nome: string; instrumento: string; escalas: number; confirmadas: number }[];
-};
-
-export async function apurarEquipe(de: Date, ate: Date): Promise<DadosEquipe> {
-  const escalas = await db.lineup.findMany({
-    where: { event: { date: { gte: de, lte: ate }, status: { not: "CANCELADO" } } },
-    include: { member: { select: { name: true, instrument: true, active: true } } },
-  });
-
-  const porNome = new Map<string, { instrumento: string; escalas: number; confirmadas: number }>();
-  for (const e of escalas) {
-    const atual = porNome.get(e.member.name) ?? {
-      instrumento: e.member.instrument,
-      escalas: 0,
-      confirmadas: 0,
-    };
-    atual.escalas += 1;
-    if (e.status === "CONFIRMADO") atual.confirmadas += 1;
-    porNome.set(e.member.name, atual);
-  }
-
-  const confirmadas = escalas.filter((e) => e.status === "CONFIRMADO").length;
-
-  return {
-    integrantesAtivos: await db.member.count({ where: { active: true } }),
-    participacoes: escalas.length,
-    taxaConfirmacao: escalas.length > 0 ? (confirmadas / escalas.length) * 100 : 0,
-    porIntegrante: [...porNome.entries()]
-      .map(([nome, d]) => ({ nome, ...d }))
-      .sort((a, b) => b.escalas - a.escalas),
   };
 }
 
@@ -141,7 +135,7 @@ export async function apurarRepertorio(de: Date, ate: Date): Promise<DadosRepert
   const itens = await db.setlistItem.findMany({
     where: {
       songId: { not: null },
-      event: { date: { gte: de, lte: ate }, status: { not: "CANCELADO" } },
+      event: { ...naJanela(de, ate), status: { not: "CANCELADO" } },
     },
     include: { song: { select: { title: true, artist: true, defaultKey: true } } },
   });
@@ -182,7 +176,7 @@ export async function apurarOrganizacao(de: Date, ate: Date): Promise<DadosOrgan
   const demandas = await db.task.findMany({
     where: {
       OR: [
-        { event: { date: { gte: de, lte: ate } } },
+        { event: naJanela(de, ate) },
         { eventId: null, createdAt: { gte: de, lte: ate } },
       ],
     },

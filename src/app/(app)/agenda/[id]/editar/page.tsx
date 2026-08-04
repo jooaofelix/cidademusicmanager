@@ -50,17 +50,32 @@ export default async function EditarEventoPage({
             </div>
           </div>
 
-          <div>
-            <label className="label" htmlFor="date">Data *</label>
-            <input
-              id="date"
-              name="date"
-              type="date"
-              required
-              defaultValue={toInputDate(event.date)}
-              className="input"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label" htmlFor="date">Começa em *</label>
+              <input
+                id="date"
+                name="date"
+                type="date"
+                required
+                defaultValue={toInputDate(event.date)}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="endDate">Termina em</label>
+              <input
+                id="endDate"
+                name="endDate"
+                type="date"
+                defaultValue={toInputDate(event.endDate)}
+                className="input"
+              />
+            </div>
           </div>
+          <p className="-mt-1 text-xs text-slate-500">
+            Deixe o término vazio se tudo acontece no mesmo dia.
+          </p>
 
           <div className="grid grid-cols-2 gap-3">
             <div>

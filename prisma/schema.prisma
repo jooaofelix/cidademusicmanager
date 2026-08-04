@@ -35,7 +35,6 @@ model Member {
   phone      String?
   createdAt  DateTime @default(now())
 
-  lineups   Lineup[]
   tasks     Task[]
   feedbacks Feedback[]
 
@@ -52,6 +51,9 @@ model Event {
   type        String   @default("CULTO") // CULTO | ENSAIO | EVENTO | GRAVACAO | OUTRO
   status      String   @default("PLANEJADO") // PLANEJADO | CONFIRMADO | REALIZADO | CANCELADO
   date        DateTime
+  // Quando o compromisso passa de um dia — viagem que sai sábado e volta
+  // domingo, por exemplo. Vazio significa que começa e termina no mesmo dia.
+  endDate     DateTime?
   callTime    String? // horario de chegada da equipe (ex "18:30")
   startTime   String? // horario de inicio
   location    String?
@@ -61,7 +63,6 @@ model Event {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  lineups      Lineup[]
   setlist      SetlistItem[]
   tasks        Task[]
   transactions Transaction[]
@@ -69,24 +70,6 @@ model Event {
 
   @@index([date])
   @@index([status])
-}
-
-// Escalação: qual músico toca o quê, e o OK dele
-model Lineup {
-  id          String    @id @default(cuid())
-  eventId     String
-  memberId    String
-  instrument  String
-  status      String    @default("PENDENTE") // PENDENTE | CONFIRMADO | RECUSADO
-  note        String?
-  respondedAt DateTime?
-
-  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, memberId, instrument])
-  @@index([eventId])
-  @@index([memberId])
 }
 
 // ---------------------------------------------------------------------------

@@ -62,6 +62,17 @@ const EVENTOS = [
     location: "Templo sede",
   },
   {
+    chave: "viagem",
+    title: "Congresso em outra igreja",
+    type: "EVENTO",
+    status: "REALIZADO",
+    offset: -12,
+    endOffset: -11,
+    callTime: "07:00",
+    startTime: "09:00",
+    location: "Igreja Batista Central",
+  },
+  {
     chave: "gravacao",
     title: "Gravação do primeiro single",
     type: "GRAVACAO",
@@ -78,7 +89,7 @@ const EVENTOS = [
  * quem decide isso é quem chama, para esta função não precisar adivinhar.
  */
 export async function criarDadosExemplo(db: Prisma.TransactionClient) {
-  const integrantes = await db.member.findMany({ select: { id: true, name: true, instrument: true } });
+  const integrantes = await db.member.findMany({ select: { id: true, name: true } });
   const porNome = new Map(integrantes.map((m) => [m.name, m]));
 
   // ----- Repertório -------------------------------------------------------
@@ -94,38 +105,18 @@ export async function criarDadosExemplo(db: Prisma.TransactionClient) {
   // ----- Agenda -----------------------------------------------------------
   const eventos = new Map<string, { id: string }>();
   for (const e of EVENTOS) {
-    const { chave, offset, ...resto } = e;
+    const { chave, offset, endOffset, ...resto } = e as typeof e & { endOffset?: number };
     eventos.set(
       chave,
       await db.event.create({
-        data: { ...resto, date: dia(offset), notes: MARCA_EXEMPLO },
+        data: {
+          ...resto,
+          date: dia(offset),
+          endDate: endOffset === undefined ? null : dia(endOffset, 22),
+          notes: MARCA_EXEMPLO,
+        },
       }),
     );
-  }
-
-  // ----- Escala -----------------------------------------------------------
-  // O culto que já passou está todo confirmado; o próximo tem gente que ainda
-  // não respondeu, para dar para ver o aviso de pendência na tela inicial.
-  const escala = [
-    ["culto-passado", "CONFIRMADO"],
-    ["culto-proximo", "PENDENTE"],
-    ["ensaio", "CONFIRMADO"],
-  ] as const;
-
-  for (const [chave, statusPadrao] of escala) {
-    const evento = eventos.get(chave)!;
-    for (const [i, integrante] of integrantes.entries()) {
-      await db.lineup.create({
-        data: {
-          eventId: evento.id,
-          memberId: integrante.id,
-          instrument: integrante.instrument,
-          // No próximo culto, parte da equipe já confirmou.
-          status: statusPadrao === "PENDENTE" && i % 3 === 0 ? "CONFIRMADO" : statusPadrao,
-          respondedAt: statusPadrao === "CONFIRMADO" ? dia(-6) : null,
-        },
-      });
-    }
   }
 
   // ----- Ordem de culto ---------------------------------------------------

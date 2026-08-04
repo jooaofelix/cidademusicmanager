@@ -31,10 +31,20 @@ export default async function NovoEventoPage() {
             </select>
           </div>
 
-          <div>
-            <label className="label" htmlFor="date">Data *</label>
-            <input id="date" name="date" type="date" required className="input" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label" htmlFor="date">Começa em *</label>
+              <input id="date" name="date" type="date" required className="input" />
+            </div>
+            <div>
+              <label className="label" htmlFor="endDate">Termina em</label>
+              <input id="endDate" name="endDate" type="date" className="input" />
+            </div>
           </div>
+          <p className="-mt-1 text-xs text-slate-500">
+            Só preencha o término se o compromisso passar de um dia — uma viagem que
+            sai no sábado e volta no domingo, por exemplo.
+          </p>
 
           <div className="grid grid-cols-2 gap-3">
             <div>

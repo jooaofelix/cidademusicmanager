@@ -5,10 +5,9 @@ import { requireMember } from "@/lib/session";
 import { PageHeader, Chip } from "@/components/ui";
 import { TaskItem } from "@/components/TaskItem";
 import { TaskForm } from "@/components/TaskForm";
-import { fmtDateLong, relativeDay } from "@/lib/format";
+import { diasDoEvento, fmtPeriodoEvento, relativeDay } from "@/lib/format";
 import { EVENT_STATUS, EVENT_TYPES, labelOf } from "@/lib/constants";
 import { applyTemplateAction, setEventStatus } from "../actions";
-import { LineupTab } from "./LineupTab";
 import { SetlistTab } from "./SetlistTab";
 import { FeedbackTab } from "./FeedbackTab";
 import { MoneyTab } from "./MoneyTab";
@@ -16,7 +15,6 @@ import { MoneyTab } from "./MoneyTab";
 export const dynamic = "force-dynamic";
 
 const TABS = [
-  { id: "escala", label: "Escala" },
   { id: "oc", label: "Ordem de Culto" },
   { id: "checklist", label: "Checklist" },
   { id: "financeiro", label: "Financeiro" },
@@ -32,16 +30,12 @@ export default async function EventoPage({
 }) {
   const { id } = await params;
   const { tab } = await searchParams;
-  const current = TABS.some((t) => t.id === tab) ? tab! : "escala";
+  const current = TABS.some((t) => t.id === tab) ? tab! : "oc";
   const me = await requireMember();
 
   const event = await db.event.findUnique({
     where: { id },
     include: {
-      lineups: {
-        include: { member: { select: { id: true, name: true, instrument: true } } },
-        orderBy: { instrument: "asc" },
-      },
       setlist: {
         orderBy: { position: "asc" },
         include: { song: true },
@@ -61,6 +55,7 @@ export default async function EventoPage({
   if (!event) notFound();
 
   const [members, songs, templates] = await Promise.all([
+    // Usados como responsáveis pelas demandas do checklist.
     db.member.findMany({
       where: { active: true },
       orderBy: { name: "asc" },
@@ -74,15 +69,15 @@ export default async function EventoPage({
     db.checklistTemplate.findMany({ orderBy: { name: "asc" } }),
   ]);
 
-  const myLineup = event.lineups.filter((l) => l.member.id === me.id);
   const openTasks = event.tasks.filter((t) => !t.done).length;
-  const pendingOks = event.lineups.filter((l) => l.status === "PENDENTE").length;
 
   return (
     <>
       <PageHeader
         title={event.title}
-        subtitle={`${fmtDateLong(event.date)}${event.startTime ? ` · ${event.startTime}` : ""}`}
+        subtitle={`${fmtPeriodoEvento(event.date, event.endDate)}${
+          event.startTime ? ` · ${event.startTime}` : ""
+        }${diasDoEvento(event.date, event.endDate) > 1 ? ` · ${diasDoEvento(event.date, event.endDate)} dias` : ""}`}
         back={{ href: "/agenda" }}
         action={
           <Link href={`/agenda/${event.id}/editar`} className="btn-ghost btn-sm shrink-0">
@@ -139,16 +134,6 @@ export default async function EventoPage({
           </a>
         )}
 
-        {myLineup.length > 0 && (
-          <div className="rounded-xl border tint-blue px-3 py-2.5">
-            <p className="text-xs text-brand-200">
-              Você está escalado em{" "}
-              <strong>{myLineup.map((l) => l.instrument).join(", ")}</strong>
-              {myLineup.some((l) => l.status === "PENDENTE") && " — confirme sua presença na aba Escala."}
-            </p>
-          </div>
-        )}
-
         <form action={setEventStatus} className="flex gap-2">
           <input type="hidden" name="id" value={event.id} />
           <select name="status" defaultValue={event.status} className="input py-2 text-sm">
@@ -163,12 +148,7 @@ export default async function EventoPage({
       <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto">
         {TABS.map((t) => {
           const active = current === t.id;
-          const badge =
-            t.id === "checklist" && openTasks > 0
-              ? openTasks
-              : t.id === "escala" && pendingOks > 0
-                ? pendingOks
-                : null;
+          const badge = t.id === "checklist" && openTasks > 0 ? openTasks : null;
 
           return (
             <Link
@@ -191,16 +171,6 @@ export default async function EventoPage({
           );
         })}
       </div>
-
-      {current === "escala" && (
-        <LineupTab
-          eventId={event.id}
-          lineups={event.lineups}
-          members={members}
-          meId={me.id}
-          isAdmin={me.isAdmin}
-        />
-      )}
 
       {current === "oc" && (
         <SetlistTab eventId={event.id} items={event.setlist} songs={songs} />

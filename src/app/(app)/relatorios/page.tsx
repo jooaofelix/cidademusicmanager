@@ -1,4 +1,4 @@
-// Relatório do ministério de música.
+// Relatório de ações da Cidade Music.
 //
 // Feito para ser mostrado numa reunião, não só consultado no celular: números
 // grandes, uma frase explicando cada seção e um botão que gera PDF pelo
@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/ui";
 import { MonthlyChart } from "@/components/MonthlyChart";
 import { Barras, N, Numerao, Secao, Tabela } from "@/components/relatorio";
 import { BotaoImprimir } from "./BotaoImprimir";
-import { brl, fmtDate, fmtDateLong } from "@/lib/format";
+import { brl, fmtDateLong, fmtPeriodoCurto } from "@/lib/format";
 import {
   EVENT_TYPES,
   EXPENSE_CATEGORIES,
@@ -25,7 +25,6 @@ import {
   PERIODOS,
   type AreaId,
   apurarAgenda,
-  apurarEquipe,
   apurarFinancas,
   apurarOrganizacao,
   apurarProjetos,
@@ -65,23 +64,21 @@ export default async function RelatoriosPage({
   // custo de um relatório completo.
   // Preparação entra junto de Equipe, e Projetos junto de Dinheiro: são
   // assuntos que ninguém apresenta separados.
-  const [agenda, equipe, repertorio, organizacao, financas, projetos, streaming] =
-    await Promise.all([
-      tem("agenda") ? apurarAgenda(de, ate) : null,
-      tem("equipe") ? apurarEquipe(de, ate) : null,
-      tem("repertorio") ? apurarRepertorio(de, ate) : null,
-      tem("equipe") ? apurarOrganizacao(de, ate) : null,
-      tem("financas") ? apurarFinancas(de, ate) : null,
-      tem("financas") ? apurarProjetos() : null,
-      tem("streaming") ? apurarStreaming(de, ate) : null,
-    ]);
+  const [agenda, repertorio, organizacao, financas, projetos, streaming] = await Promise.all([
+    tem("agenda") ? apurarAgenda(de, ate) : null,
+    tem("repertorio") ? apurarRepertorio(de, ate) : null,
+    tem("agenda") ? apurarOrganizacao(de, ate) : null,
+    tem("financas") ? apurarFinancas(de, ate) : null,
+    tem("financas") ? apurarProjetos() : null,
+    tem("streaming") ? apurarStreaming(de, ate) : null,
+  ]);
 
   const plural = (n: number, um: string, muitos: string) => (n === 1 ? um : muitos);
 
   return (
     <>
       <div className="esconder-na-impressao">
-        <PageHeader title="Relatório" subtitle="Monte a apresentação do ministério" />
+        <PageHeader title="Relatório" subtitle="Monte a apresentação das ações da banda" />
 
         <form method="get" className="card mb-5 space-y-4">
           <div>
@@ -160,10 +157,10 @@ export default async function RelatoriosPage({
             Cidade Music
           </p>
           <h1 className="mt-1 text-2xl font-bold leading-tight text-slate-100">
-            Relatório do Ministério de Música
+            Relatório de Ações Cidade Music
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            {rotuloPeriodo} · {fmtDate(de)} a {fmtDate(ate)}
+            {rotuloPeriodo}
           </p>
           <p className="mt-0.5 text-xs text-slate-500">
             Emitido por {eu.name} em {fmtDateLong(new Date())}
@@ -190,6 +187,13 @@ export default async function RelatoriosPage({
                     pela frente
                   </>
                 )}
+                {organizacao && organizacao.total > 0 && (
+                  <>
+                    . Das <N>{organizacao.total}</N> tarefas de preparação,{" "}
+                    <N>{organizacao.concluidas}</N>{" "}
+                    {plural(organizacao.concluidas, "foi concluída", "foram concluídas")}
+                  </>
+                )}
                 .
               </>
             }
@@ -210,47 +214,12 @@ export default async function RelatoriosPage({
                   colunas={["Compromisso", "Data", "Músicas"]}
                   linhas={agenda.ultimos.map((e) => [
                     e.title,
-                    fmtDate(e.date),
+                    fmtPeriodoCurto(e.date, e.endDate),
                     e.musicas > 0 ? e.musicas : "—",
                   ])}
                 />
               </>
             )}
-          </Secao>
-        )}
-
-        {equipe && (
-          <Secao
-            titulo="Nossa equipe"
-            frase={
-              <>
-                <N>{equipe.integrantesAtivos}</N> integrantes ativos somaram{" "}
-                <N>{equipe.participacoes}</N>{" "}
-                {plural(equipe.participacoes, "participação", "participações")}
-                {equipe.participacoes > 0 && (
-                  <>
-                    , com <N>{equipe.taxaConfirmacao.toFixed(0)}%</N> de confirmação nas escalas
-                  </>
-                )}
-                {organizacao && organizacao.total > 0 && (
-                  <>
-                    . Das <N>{organizacao.total}</N> tarefas de preparação,{" "}
-                    <N>{organizacao.concluidas}</N> {plural(organizacao.concluidas, "foi concluída", "foram concluídas")}
-                  </>
-                )}
-                .
-              </>
-            }
-          >
-            <h3 className="section-title mb-2">Quantas vezes cada um serviu</h3>
-            <Barras
-              itens={equipe.porIntegrante.map((m) => ({
-                rotulo: m.nome,
-                valor: m.escalas,
-                nota: m.instrumento,
-              }))}
-              formatar={(n) => `${n} ${plural(n, "vez", "vezes")}`}
-            />
           </Secao>
         )}
 

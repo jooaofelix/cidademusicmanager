@@ -19,4 +19,12 @@ export const MIGRACOES: { nome: string; sql: string }[] = [
     nome: "Member.isReporter",
     sql: `ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "isReporter" BOOLEAN NOT NULL DEFAULT false`,
   },
+  {
+    nome: "Event.endDate",
+    sql: `ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "endDate" TIMESTAMP(3)`,
+  },
 ];
+
+// A tabela "Lineup" deixou de ser usada quando a escala saiu do sistema. Ela
+// continua no banco de quem já tinha, sem nada apontando para ela: apagar
+// destruiria o histórico de quem serviu, e não custa nada mantê-la parada.
