@@ -87,14 +87,15 @@ export default async function RelatoriosPage({
           <div>
             <span className="label">Período</span>
             <div className="grid grid-cols-2 gap-2">
+              {/* O destaque acompanha o que está marcado agora, não o que o
+                  servidor desenhou: sem isso, tocar num período não muda nada
+                  na tela até gerar, e parece que o botão não funcionou. */}
               {PERIODOS.map((p) => (
                 <label
                   key={p.id}
-                  className={`btn btn-sm cursor-pointer border ${
-                    periodo === p.id
-                      ? "border-brand-500 tint-blue"
-                      : "border-ink-600 bg-ink-800 text-slate-300"
-                  }`}
+                  className="btn btn-sm cursor-pointer border border-ink-600 bg-ink-800
+                             text-slate-300 has-[:checked]:border-brand-500
+                             has-[:checked]:tint-blue"
                 >
                   <input
                     type="radio"
@@ -114,7 +115,11 @@ export default async function RelatoriosPage({
             <ul className="space-y-1.5">
               {AREAS.map((a) => (
                 <li key={a.id}>
-                  <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-ink-700 p-2.5">
+                  <label
+                    className="flex cursor-pointer items-start gap-2.5 rounded-lg border
+                               border-ink-700 p-2.5 transition has-[:checked]:border-brand-500
+                               has-[:checked]:bg-brand-500/5"
+                  >
                     <input
                       type="checkbox"
                       name="area"
