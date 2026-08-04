@@ -13,7 +13,7 @@
 
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { SCHEMA_SQL } from "./schema-gerado";
-import { semear, TESOUREIROS_INICIAIS } from "./dados-iniciais";
+import { RELATORES_INICIAIS, semear, TESOUREIROS_INICIAIS } from "./dados-iniciais";
 import { MIGRACOES } from "./migracoes";
 import { criarDadosExemplo } from "./dados-exemplo";
 import { comRetentativa } from "./retentativa";
@@ -66,6 +66,7 @@ async function executar(): Promise<void> {
           }
 
           await definirTesoureirosIniciais(tx);
+          await definirRelatoresIniciais(tx);
 
           // Com a agenda ainda vazia, enche o sistema com um mês de exemplo
           // para ninguém abrir e ver só telas em branco. Some assim que a
@@ -112,6 +113,18 @@ async function definirTesoureirosIniciais(tx: Prisma.TransactionClient): Promise
   });
 
   if (count > 0) console.log(`[preparar-banco] ${count} tesoureiro(s) definido(s).`);
+}
+
+/** Mesma ideia dos tesoureiros: só age enquanto não houver nenhum relator. */
+async function definirRelatoresIniciais(tx: Prisma.TransactionClient): Promise<void> {
+  if ((await tx.member.count({ where: { isReporter: true } })) > 0) return;
+
+  const { count } = await tx.member.updateMany({
+    where: { name: { in: [...RELATORES_INICIAIS] } },
+    data: { isReporter: true },
+  });
+
+  if (count > 0) console.log(`[preparar-banco] ${count} relator(es) definido(s).`);
 }
 
 async function temTabelas(tx: Prisma.TransactionClient): Promise<boolean> {

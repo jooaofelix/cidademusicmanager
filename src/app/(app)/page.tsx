@@ -184,8 +184,26 @@ export default async function HomePage() {
         <Link href="/agenda/novo" className="btn-ghost py-3">+ Evento</Link>
         <Link href="/repertorio/nova" className="btn-ghost py-3">+ Música</Link>
         <Link href="/checklist" className="btn-ghost py-3">Checklist</Link>
-        <Link href="/financas/lancamentos" className="btn-ghost py-3">+ Lançamento</Link>
+        {me.isTreasurer && (
+          <Link href="/financas/lancamentos" className="btn-ghost py-3">+ Lançamento</Link>
+        )}
       </section>
+
+      {me.isReporter && (
+        <Link href="/relatorios" className="card mt-4 flex items-center justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-slate-100">
+              Relatório do ministério
+            </span>
+            <span className="block text-xs text-slate-500">
+              Monte a apresentação com os números do período
+            </span>
+          </span>
+          <span className="shrink-0 text-brand-500" aria-hidden>
+            →
+          </span>
+        </Link>
+      )}
     </>
   );
 }

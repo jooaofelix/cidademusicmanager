@@ -15,4 +15,8 @@ export const MIGRACOES: { nome: string; sql: string }[] = [
     nome: "Member.isTreasurer",
     sql: `ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "isTreasurer" BOOLEAN NOT NULL DEFAULT false`,
   },
+  {
+    nome: "Member.isReporter",
+    sql: `ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "isReporter" BOOLEAN NOT NULL DEFAULT false`,
+  },
 ];

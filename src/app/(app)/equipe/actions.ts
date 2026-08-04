@@ -88,6 +88,23 @@ export async function updateTreasurer(formData: FormData) {
   revalidatePath("/equipe");
 }
 
+/**
+ * Dá ou tira o acesso ao relatório. Fica com o administrador, e não com quem
+ * já relata, porque é permissão de leitura ampla — inclusive dos números de
+ * finanças — e a liderança é quem decide quem apresenta o ministério.
+ */
+export async function updateReporter(formData: FormData) {
+  const me = await requireMember();
+  if (!me.isAdmin) return;
+
+  await db.member.update({
+    where: { id: String(formData.get("id")) },
+    data: { isReporter: formData.get("isReporter") === "on" },
+  });
+
+  revalidatePath("/equipe");
+}
+
 export async function changePin(formData: FormData) {
   const me = await requireMember();
 

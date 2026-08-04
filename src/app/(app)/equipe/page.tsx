@@ -9,6 +9,7 @@ import {
   limparExemplos,
   mudarTema,
   updateMember,
+  updateReporter,
   updateTreasurer,
 } from "./actions";
 import { temaAtual } from "@/lib/tema";
@@ -50,6 +51,7 @@ export default async function EquipePage() {
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {m.isAdmin && <Chip tone="blue">Admin</Chip>}
                     {m.isTreasurer && <Chip tone="green">Finanças</Chip>}
+                    {m.isReporter && <Chip tone="purple">Relatório</Chip>}
                     {!m.active && <Chip tone="red">Inativo</Chip>}
                     <Chip>{m._count.lineups} escalas</Chip>
                     {m._count.tasks > 0 && <Chip tone="amber">{m._count.tasks} demandas</Chip>}
@@ -116,6 +118,24 @@ export default async function EquipePage() {
 
                     <button type="submit" className="btn-primary btn-sm w-full">Salvar</button>
                   </form>
+                  )}
+
+                  {me.isAdmin && (
+                    <form action={updateReporter} className="mt-2 rounded-lg border border-ink-700 p-2">
+                      <input type="hidden" name="id" value={m.id} />
+                      <label className="flex items-center gap-2 text-xs text-slate-300">
+                        <input
+                          type="checkbox"
+                          name="isReporter"
+                          defaultChecked={m.isReporter}
+                          className="h-4 w-4 accent-purple-500"
+                        />
+                        Pode montar o relatório do ministério
+                      </label>
+                      <button type="submit" className="btn-ghost btn-sm mt-2 w-full">
+                        Salvar relatório
+                      </button>
+                    </form>
                   )}
 
                   {canGrantFinance && (

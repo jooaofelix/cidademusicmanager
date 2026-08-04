@@ -56,6 +56,8 @@ export type SessionMember = {
   isAdmin: boolean;
   /** Cuida do dinheiro: lançamentos, projetos, streaming e quem mais acessa. */
   isTreasurer: boolean;
+  /** Monta e apresenta o relatório do ministério. */
+  isReporter: boolean;
 };
 
 export async function getCurrentMember(): Promise<SessionMember | null> {
@@ -78,6 +80,7 @@ export async function getCurrentMember(): Promise<SessionMember | null> {
       instrument: true,
       isAdmin: true,
       isTreasurer: true,
+      isReporter: true,
       active: true,
     },
   });
@@ -89,6 +92,7 @@ export async function getCurrentMember(): Promise<SessionMember | null> {
     instrument: member.instrument,
     isAdmin: member.isAdmin,
     isTreasurer: member.isTreasurer,
+    isReporter: member.isReporter,
   };
 }
 
@@ -107,5 +111,12 @@ export async function requireMember(): Promise<SessionMember> {
 export async function requireTreasurer(): Promise<SessionMember> {
   const member = await requireMember();
   if (!member.isTreasurer) redirect("/financas");
+  return member;
+}
+
+/** Usa na tela de relatório. Quem não monta relatório volta para o início. */
+export async function requireReporter(): Promise<SessionMember> {
+  const member = await requireMember();
+  if (!member.isReporter) redirect("/");
   return member;
 }

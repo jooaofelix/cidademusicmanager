@@ -155,6 +155,15 @@
   .tint-slate {
     @apply border-ink-600 bg-ink-800 text-slate-300;
   }
+
+  /* Verde de entrada e vermelho de saída. Tons diferentes por aparência:
+     o que se lê bem sobre branco fica apagado sobre preto, e vice-versa. */
+  .texto-positivo {
+    @apply text-emerald-600;
+  }
+  .texto-negativo {
+    @apply text-red-600;
+  }
   .tint-green {
     @apply border-emerald-200 bg-emerald-50 text-emerald-700;
   }
@@ -206,6 +215,22 @@
   @apply border-purple-800/70 bg-purple-950/50 text-purple-300;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) .texto-positivo {
+    @apply text-emerald-400;
+  }
+  :root:not([data-tema="claro"]) .texto-negativo {
+    @apply text-red-400;
+  }
+}
+
+:root[data-tema="escuro"] .texto-positivo {
+  @apply text-emerald-400;
+}
+:root[data-tema="escuro"] .texto-negativo {
+  @apply text-red-400;
+}
+
 /* Esconde a seta do input number no mobile */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
@@ -219,4 +244,60 @@ input[type="number"]::-webkit-inner-spin-button {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Impressão / Salvar em PDF
+   ---------------------------------------------------------------------------
+   O relatório é feito para virar arquivo e ser projetado. Na impressão some
+   tudo que é de navegar — formulário, barra inferior, cabeçalho do app — e o
+   fundo vira branco, porque tema escuro em papel gasta tinta e some no
+   projetor. As seções tentam não partir no meio de uma página.
+--------------------------------------------------------------------------- */
+
+@media print {
+  :root {
+    --ink-950: 255 255 255;
+    --ink-900: 255 255 255;
+    --ink-850: 255 255 255;
+    --ink-800: 245 246 248;
+    --ink-700: 210 216 223;
+    --ink-600: 190 197 206;
+
+    --txt-100: 0 0 0;
+    --txt-200: 20 25 35;
+    --txt-300: 40 48 60;
+    --txt-400: 70 80 95;
+    --txt-500: 90 100 115;
+    --txt-600: 120 130 145;
+
+    --sombra-cartao: none;
+  }
+
+  .esconder-na-impressao,
+  header.sticky,
+  nav {
+    display: none !important;
+  }
+
+  body {
+    padding-bottom: 0;
+  }
+
+  .quebra-antes {
+    break-inside: avoid;
+  }
+
+  .card,
+  .card-tight {
+    border-color: rgb(210 216 223);
+  }
+
+  a[href]::after {
+    content: none; /* não imprime a URL depois de cada link */
+  }
+
+  @page {
+    margin: 14mm;
+  }
 }

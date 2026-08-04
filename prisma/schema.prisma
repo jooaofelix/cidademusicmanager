@@ -27,6 +27,10 @@ model Member {
   // Quem cuida do dinheiro: vê lançamentos, projetos e streaming, e escolhe
   // quem mais tem esse acesso. O painel de finanças é aberto a todos.
   isTreasurer Boolean @default(false)
+  // Monta e apresenta o relatório do ministério. É permissão de leitura
+  // ampla: quem relata enxerga os números de finanças no relatório mesmo
+  // sem cuidar do caixa no dia a dia.
+  isReporter  Boolean @default(false)
   active     Boolean  @default(true)
   phone      String?
   createdAt  DateTime @default(now())
