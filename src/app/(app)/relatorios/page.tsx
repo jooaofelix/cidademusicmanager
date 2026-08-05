@@ -139,6 +139,16 @@ export default async function RelatoriosPage({
           </button>
         </form>
 
+        <Link
+          href={`/apresentacao?periodo=${periodo}${escolhidas.map((a) => `&area=${a}`).join("")}`}
+          className="btn-primary mb-3 w-full"
+        >
+          Abrir em modo apresentação
+        </Link>
+        <p className="mb-4 text-center text-xs text-slate-500">
+          Os mesmos números em slides, na identidade da banda — para projetar ou virar PDF.
+        </p>
+
         <div className="mb-5 flex gap-2">
           <BotaoImprimir />
           <Link href="/" className="btn-ghost btn-sm flex-1">

@@ -1,0 +1,444 @@
+/* ---------------------------------------------------------------------------
+   Relatório em slides — identidade Cidade Music
+   ---------------------------------------------------------------------------
+   Fora do tema claro/escuro do sistema de propósito: este é o material que a
+   banda apresenta, e precisa sair igual em qualquer aparelho e no papel.
+
+   As medidas são fixas em pixels e o slide inteiro é reduzido por transform
+   quando a tela é menor. Assim o mesmo desenho serve para o celular, para o
+   projetor e para o PDF, sem precisar de três layouts.
+--------------------------------------------------------------------------- */
+
+.deck {
+  --laranja: #ff7401;
+  --laranja-escuro: #f2600c;
+  --ambar: #fbb03b;
+  --creme: #ead8b6;
+  --creme-fundo: #e3cfa8;
+  --tinta: #2a2118;
+  --tinta-suave: #7a613c;
+
+  background: #4a4a4a;
+  min-height: 100vh;
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.slide {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  flex: none;
+  background: var(--creme);
+  overflow: hidden;
+  color: var(--tinta);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* encolhe para caber na largura da tela, mantendo a proporção */
+  transform: scale(var(--escala, 1));
+  transform-origin: top center;
+  margin-bottom: calc(1080px * (var(--escala, 1) - 1));
+}
+
+/* marca-d'água repetida, bem discreta */
+.slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/cm-marca.png");
+  background-size: 280px;
+  opacity: 0.035;
+}
+
+.slide-marca {
+  position: absolute;
+  left: -110px;
+  bottom: -95px;
+  width: 430px;
+  pointer-events: none;
+}
+
+.slide-assinatura {
+  position: absolute;
+  right: 110px;
+  bottom: 58px;
+  width: 280px;
+  pointer-events: none;
+}
+
+.slide-conteudo {
+  position: relative;
+  height: 100%;
+  padding: 88px 120px 150px;
+  display: flex;
+  flex-direction: column;
+}
+
+.slide-centro .slide-conteudo {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Capa e encerramento, no laranja da marca */
+.slide-laranja {
+  background: linear-gradient(135deg, #f8600a 0%, #ff7401 45%, #fba31f 100%);
+  color: #fdf6e8;
+}
+.slide-laranja::before {
+  filter: brightness(0) invert(1);
+  opacity: 0.07;
+}
+
+/* --------------------------------------------------------------------- */
+
+.slide-cabecalho {
+  margin-bottom: 36px;
+}
+
+.slide-titulo {
+  font-size: 82px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  line-height: 0.98;
+  background: linear-gradient(100deg, var(--laranja-escuro) 0%, var(--laranja) 45%, var(--ambar) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.slide-sub {
+  margin-top: 10px;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+.slide-frase {
+  font-size: 40px;
+  line-height: 1.35;
+  border-left: 10px solid var(--laranja);
+  padding-left: 30px;
+  margin-bottom: 44px;
+  max-width: 1480px;
+}
+.slide-frase b {
+  color: var(--laranja-escuro);
+  font-weight: 800;
+}
+
+.slide-vazio {
+  font-size: 30px;
+  color: var(--tinta-suave);
+  border: 3px dashed #c9ae7d;
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+}
+
+/* ----- números grandes ------------------------------------------------ */
+
+.numeros {
+  display: flex;
+  gap: 68px;
+  margin-bottom: 38px;
+  flex-wrap: wrap;
+}
+
+.num {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.num-bola {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--laranja), var(--ambar));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  color: #fff;
+  flex: none;
+}
+
+.num-valor {
+  display: block;
+  font-size: 68px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--laranja-escuro);
+  font-variant-numeric: tabular-nums;
+}
+
+.num-rotulo {
+  display: block;
+  margin-top: 8px;
+  font-size: 25px;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+/* ----- barras --------------------------------------------------------- */
+
+.barras {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1330px;
+}
+
+.barra-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 30px;
+  margin-bottom: 7px;
+}
+
+.barra-nome {
+  font-size: 31px;
+  font-weight: 600;
+}
+
+.barra-valor {
+  font-size: 31px;
+  font-weight: 800;
+  color: var(--laranja-escuro);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.barra-trilho {
+  height: 17px;
+  border-radius: 99px;
+  background: #d3b986;
+  overflow: hidden;
+}
+
+.barra-preenche {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--laranja), var(--ambar));
+}
+
+.barra-nota {
+  display: block;
+  margin-top: 6px;
+  font-size: 21px;
+  color: var(--tinta-suave);
+}
+
+/* ----- gráfico de colunas -------------------------------------------- */
+
+.grafico-legenda {
+  display: flex;
+  gap: 34px;
+  font-size: 25px;
+  color: var(--tinta-suave);
+  margin-bottom: 26px;
+}
+.grafico-legenda span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.grafico-legenda i {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.grafico-colunas {
+  display: flex;
+  align-items: flex-end;
+  gap: 34px;
+  height: 268px;
+}
+
+.mes {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.mes-barras {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+}
+
+.col {
+  width: 40%;
+  border-radius: 8px 8px 0 0;
+  min-height: 3px;
+}
+.col-entrada {
+  background: #0f9d58;
+}
+.col-saida {
+  background: #d93025;
+}
+
+.mes-nome {
+  margin-top: 14px;
+  font-size: 23px;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+.mes-saldo {
+  font-size: 21px;
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----- projetos ------------------------------------------------------- */
+
+.projetos {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  max-width: 1330px;
+}
+
+.projeto-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 9px;
+}
+.projeto-nome {
+  font-size: 34px;
+  font-weight: 700;
+}
+.projeto-pct {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--laranja-escuro);
+}
+.projeto-nota {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  color: var(--tinta-suave);
+}
+
+/* ----- capa ----------------------------------------------------------- */
+
+.capa-marca {
+  width: 300px;
+  margin-bottom: 46px;
+  filter: brightness(0) invert(1);
+}
+.capa-titulo {
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1.02;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  max-width: 1400px;
+}
+.capa-periodo {
+  margin-top: 28px;
+  font-size: 40px;
+  font-weight: 600;
+  opacity: 0.92;
+}
+.capa-rodape {
+  margin-top: 56px;
+  font-size: 26px;
+  opacity: 0.8;
+}
+
+/* ----- duas colunas --------------------------------------------------- */
+
+.duas-colunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+}
+.coluna-titulo {
+  font-size: 27px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--tinta-suave);
+  margin-bottom: 20px;
+}
+
+/* ----- barra de controle (não sai na impressão) ----------------------- */
+
+.controles {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  background: #2f2f2f;
+  padding: 14px 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.controles a,
+.controles button {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 18px;
+  border: 1px solid #5a5a5a;
+  background: #3d3d3d;
+  color: #eee;
+  cursor: pointer;
+  text-decoration: none;
+}
+.controles .principal {
+  background: var(--laranja);
+  border-color: var(--laranja);
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------- */
+
+@media print {
+  @page {
+    size: 1920px 1080px;
+    margin: 0;
+  }
+
+  .deck {
+    background: none;
+    padding: 0;
+    gap: 0;
+    display: block;
+  }
+
+  .controles {
+    display: none !important;
+  }
+
+  .slide {
+    transform: none !important;
+    margin: 0 !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .slide:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
