@@ -37,7 +37,13 @@ export function ehPeriodo(valor: string): valor is PeriodoId {
   return PERIODOS.some((p) => p.id === valor);
 }
 
-export function intervaloDe(periodo: PeriodoId): { de: Date; ate: Date; rotulo: string } {
+export function intervaloDe(periodo: PeriodoId): {
+  de: Date;
+  ate: Date;
+  rotulo: string;
+  /** O recorte olha para frente: muda o tempo verbal do relatório inteiro. */
+  futuro: boolean;
+} {
   const def = PERIODOS.find((p) => p.id === periodo) ?? PERIODOS[1];
   const hoje = new Date();
 
@@ -48,7 +54,7 @@ export function intervaloDe(periodo: PeriodoId): { de: Date; ate: Date; rotulo: 
     de.setFullYear(de.getFullYear() - 10);
     const ate = new Date(hoje);
     ate.setFullYear(ate.getFullYear() + 10);
-    return { de, ate, rotulo: def.rotulo };
+    return { de, ate, rotulo: def.rotulo, futuro: false };
   }
 
   const outro = new Date(hoje);
@@ -58,7 +64,7 @@ export function intervaloDe(periodo: PeriodoId): { de: Date; ate: Date; rotulo: 
   de.setHours(0, 0, 0, 0);
   ate.setHours(23, 59, 59, 999);
 
-  return { de, ate, rotulo: def.rotulo };
+  return { de, ate, rotulo: def.rotulo, futuro: def.dias > 0 };
 }
 
 /**
@@ -86,10 +92,12 @@ export type DadosAgenda = {
   ultimos: { id: string; title: string; date: Date; endDate: Date | null; type: string; musicas: number }[];
 };
 
-export async function apurarAgenda(de: Date, ate: Date): Promise<DadosAgenda> {
+export async function apurarAgenda(de: Date, ate: Date, futuro = false): Promise<DadosAgenda> {
+  // Olhando para trás, interessa o que acabou de acontecer; olhando para
+  // frente, o que acontece primeiro. Nos dois casos é o mais próximo de hoje.
   const eventos = await db.event.findMany({
     where: { ...naJanela(de, ate), status: { not: "CANCELADO" } },
-    orderBy: { date: "desc" },
+    orderBy: { date: futuro ? "asc" : "desc" },
     include: { _count: { select: { setlist: true } } },
   });
 

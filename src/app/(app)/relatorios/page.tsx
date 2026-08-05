@@ -48,7 +48,7 @@ export default async function RelatoriosPage({
   const { periodo: periodoBruto, area: areaBruta } = await searchParams;
 
   const periodo = periodoBruto && ehPeriodo(periodoBruto) ? periodoBruto : "90d";
-  const { de, ate, rotulo: rotuloPeriodo } = intervaloDe(periodo);
+  const { de, ate, rotulo: rotuloPeriodo, futuro } = intervaloDe(periodo);
 
   // Caixas de seleção repetem o mesmo nome na URL: uma marcada vira texto,
   // várias viram lista. Sem nenhuma — que é o primeiro acesso — vale o padrão;
@@ -65,7 +65,7 @@ export default async function RelatoriosPage({
   // Preparação entra junto de Equipe, e Projetos junto de Dinheiro: são
   // assuntos que ninguém apresenta separados.
   const [agenda, repertorio, organizacao, financas, projetos, streaming] = await Promise.all([
-    tem("agenda") ? apurarAgenda(de, ate) : null,
+    tem("agenda") ? apurarAgenda(de, ate, futuro) : null,
     tem("repertorio") ? apurarRepertorio(de, ate) : null,
     tem("agenda") ? apurarOrganizacao(de, ate) : null,
     tem("financas") ? apurarFinancas(de, ate) : null,
@@ -178,13 +178,27 @@ export default async function RelatoriosPage({
             titulo="Onde servimos"
             frase={
               <>
-                No período a equipe serviu em <N>{agenda.realizados}</N>{" "}
-                {plural(agenda.realizados, "ocasião", "ocasiões")}
-                {agenda.proximos > 0 && (
+                {futuro ? (
                   <>
-                    , e há <N>{agenda.proximos}</N>{" "}
-                    {plural(agenda.proximos, "compromisso já marcado", "compromissos já marcados")}{" "}
-                    pela frente
+                    A equipe tem <N>{agenda.total}</N>{" "}
+                    {plural(agenda.total, "compromisso marcado", "compromissos marcados")} para
+                    o período
+                  </>
+                ) : (
+                  <>
+                    No período a equipe serviu em <N>{agenda.realizados}</N>{" "}
+                    {plural(agenda.realizados, "ocasião", "ocasiões")}
+                    {agenda.proximos > 0 && (
+                      <>
+                        , e há <N>{agenda.proximos}</N>{" "}
+                        {plural(
+                          agenda.proximos,
+                          "compromisso já marcado",
+                          "compromissos já marcados",
+                        )}{" "}
+                        pela frente
+                      </>
+                    )}
                   </>
                 )}
                 {organizacao && organizacao.total > 0 && (
@@ -209,7 +223,9 @@ export default async function RelatoriosPage({
 
             {agenda.ultimos.length > 0 && (
               <>
-                <h3 className="section-title mb-2 mt-5">Os mais recentes</h3>
+                <h3 className="section-title mb-2 mt-5">
+                  {futuro ? "O que já está na agenda" : "Os mais recentes"}
+                </h3>
                 <Tabela
                   colunas={["Compromisso", "Data", "Músicas"]}
                   linhas={agenda.ultimos.map((e) => [
@@ -228,13 +244,16 @@ export default async function RelatoriosPage({
             titulo="Músicas"
             frase={
               <>
-                Foram ministradas <N>{repertorio.distintasNoPeriodo}</N>{" "}
+                {futuro ? "Já estão escolhidas " : "Foram ministradas "}
+                <N>{repertorio.distintasNoPeriodo}</N>{" "}
                 {plural(repertorio.distintasNoPeriodo, "música diferente", "músicas diferentes")},
                 de um repertório de <N>{repertorio.acervo}</N> cadastradas.
               </>
             }
           >
-            <h3 className="section-title mb-2">As mais ministradas</h3>
+            <h3 className="section-title mb-2">
+              {futuro ? "As mais escolhidas" : "As mais ministradas"}
+            </h3>
             <Barras
               itens={repertorio.maisTocadas.map((m) => ({
                 rotulo: m.titulo,
@@ -250,12 +269,16 @@ export default async function RelatoriosPage({
           <Secao
             titulo="Dinheiro"
             frase={
-              <>
-                Entrou <N>{brl(financas.entradas)}</N> e saiu <N>{brl(financas.saidas)}</N>
-                {", "}
-                {financas.saldo >= 0 ? "sobrando" : "faltando"}{" "}
-                <N>{brl(Math.abs(financas.saldo))}</N> no período.
-              </>
+              financas.lancamentos === 0 ? (
+                <>Nenhum lançamento registrado neste período.</>
+              ) : (
+                <>
+                  Entrou <N>{brl(financas.entradas)}</N> e saiu <N>{brl(financas.saidas)}</N>
+                  {", "}
+                  {financas.saldo >= 0 ? "sobrando" : "faltando"}{" "}
+                  <N>{brl(Math.abs(financas.saldo))}</N> no período.
+                </>
+              )
             }
           >
             <div className="mb-5 grid grid-cols-2 gap-2">
@@ -320,11 +343,15 @@ export default async function RelatoriosPage({
           <Secao
             titulo="Streaming"
             frase={
-              <>
-                As músicas foram ouvidas <N>{streaming.streams.toLocaleString("pt-BR")}</N>{" "}
-                {plural(streaming.streams, "vez", "vezes")} nas plataformas, rendendo{" "}
-                <N>{brl(streaming.total)}</N>.
-              </>
+              streaming.porPlataforma.length === 0 ? (
+                <>Nenhum relatório de plataforma lançado neste período.</>
+              ) : (
+                <>
+                  As músicas foram ouvidas <N>{streaming.streams.toLocaleString("pt-BR")}</N>{" "}
+                  {plural(streaming.streams, "vez", "vezes")} nas plataformas, rendendo{" "}
+                  <N>{brl(streaming.total)}</N>.
+                </>
+              )
             }
           >
             <h3 className="section-title mb-2">Por plataforma</h3>
