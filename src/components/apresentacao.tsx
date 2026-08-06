@@ -21,25 +21,30 @@ export const TINTA_SUAVE = "#7a613c";
 export function Slide({
   children,
   centralizado = false,
-  fundoLaranja = false,
 }: {
   children: ReactNode;
   centralizado?: boolean;
-  fundoLaranja?: boolean;
 }) {
   return (
-    <section
-      className={`slide ${centralizado ? "slide-centro" : ""} ${
-        fundoLaranja ? "slide-laranja" : ""
-      }`}
-    >
-      {!fundoLaranja && (
-        <>
-          <img className="slide-marca" src="/cm-marca.png" alt="" />
-          <img className="slide-assinatura" src="/cm-assinatura.png" alt="" />
-        </>
-      )}
+    <section className={`slide ${centralizado ? "slide-centro" : ""}`}>
+      <img className="slide-marca" src="/cm-marca.png" alt="" />
+      <img className="slide-assinatura" src="/cm-assinatura.png" alt="" />
       <div className="slide-conteudo">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * Capa e encerramento: a arte que a banda já usa, inteira, sem redesenhar.
+ *
+ * O texto vai por cima na faixa de baixo, onde a arte é lisa — assim a logo
+ * fica intacta e o slide continua sendo o material original.
+ */
+export function SlideCapa({ children }: { children?: ReactNode }) {
+  return (
+    <section className="slide slide-capa">
+      <img className="capa-arte" src="/cm-capa.jpg" alt="Cidade Music" />
+      {children && <div className="capa-texto">{children}</div>}
     </section>
   );
 }

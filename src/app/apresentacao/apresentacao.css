@@ -82,14 +82,28 @@
   text-align: center;
 }
 
-/* Capa e encerramento, no laranja da marca */
-.slide-laranja {
-  background: linear-gradient(135deg, #f8600a 0%, #ff7401 45%, #fba31f 100%);
-  color: #fdf6e8;
+/* Capa e encerramento: a arte original da banda, inteira. */
+.slide-capa::before {
+  display: none;
 }
-.slide-laranja::before {
-  filter: brightness(0) invert(1);
-  opacity: 0.07;
+
+.capa-arte {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.capa-texto {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* acima das marcas dos cantos, que ficam por volta de 60px do rodapé */
+  bottom: 132px;
+  text-align: center;
+  color: #fdf6e8;
+  text-shadow: 0 2px 14px rgb(140 50 0 / 0.35);
 }
 
 /* --------------------------------------------------------------------- */
@@ -343,22 +357,21 @@
   filter: brightness(0) invert(1);
 }
 .capa-titulo {
-  font-size: 96px;
+  font-size: 72px;
   font-weight: 800;
   line-height: 1.02;
   text-transform: uppercase;
   letter-spacing: -1px;
-  max-width: 1400px;
 }
 .capa-periodo {
-  margin-top: 28px;
-  font-size: 40px;
+  margin-top: 12px;
+  font-size: 34px;
   font-weight: 600;
   opacity: 0.92;
 }
 .capa-rodape {
-  margin-top: 56px;
-  font-size: 26px;
+  margin-top: 16px;
+  font-size: 22px;
   opacity: 0.8;
 }
 

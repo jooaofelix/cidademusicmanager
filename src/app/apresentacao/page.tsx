@@ -34,6 +34,7 @@ import {
   NumeroGrande,
   Projeto,
   Slide,
+  SlideCapa,
   TituloSlide,
 } from "@/components/apresentacao";
 import { Controles } from "./Controles";
@@ -87,14 +88,13 @@ export default async function ApresentacaoPage({
       <Controles voltarPara={voltar} />
 
       {/* ---------------------------------------------------------------- */}
-      <Slide centralizado fundoLaranja>
-        <img className="capa-marca" src="/cm-marca.png" alt="" />
+      <SlideCapa>
         <h1 className="capa-titulo">Relatório de Ações</h1>
         <p className="capa-periodo">{rotuloPeriodo}</p>
         <p className="capa-rodape">
           Emitido por {eu.name} em {fmtDateLong(new Date())}
         </p>
-      </Slide>
+      </SlideCapa>
 
       {/* ---------------------------------------------------------------- */}
       {agenda && (
@@ -325,10 +325,7 @@ export default async function ApresentacaoPage({
       )}
 
       {/* ---------------------------------------------------------------- */}
-      <Slide centralizado fundoLaranja>
-        <img className="capa-marca" src="/cm-marca.png" alt="" />
-        <p className="capa-periodo">Obrigado.</p>
-      </Slide>
+      <SlideCapa />
     </div>
   );
 }
