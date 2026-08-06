@@ -103,7 +103,6 @@
   bottom: 132px;
   text-align: center;
   color: #fdf6e8;
-  text-shadow: 0 2px 14px rgb(140 50 0 / 0.35);
 }
 
 /* --------------------------------------------------------------------- */
@@ -118,10 +117,10 @@
   text-transform: uppercase;
   letter-spacing: -1px;
   line-height: 0.98;
-  background: linear-gradient(100deg, var(--laranja-escuro) 0%, var(--laranja) 45%, var(--ambar) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  /* Cor sólida, e não gradiente recortado no texto: background-clip: text
+     não sobrevive à geração de PDF em vários leitores, que passam a mostrar
+     o retângulo do gradiente por cima das letras. */
+  color: var(--laranja-escuro);
 }
 
 .slide-sub {
